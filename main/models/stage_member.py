@@ -1,9 +1,9 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
-from . import Competitor, StageObject
 
 
 class StageMember(models.Model):
-    competitor = models.ForeignKey(Competitor, on_delete=models.PROTECT)
-    stage_object = models.ForeignKey(StageObject, on_delete=models.CASCADE)
+    INDEX_POOL_NUMBER = 0
+    competitor = models.ForeignKey('main.Competitor', on_delete=models.PROTECT)
+    stage_object = models.ForeignKey('main.StageObject', on_delete=models.CASCADE)
     data = JSONField()

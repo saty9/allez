@@ -7,5 +7,5 @@ from .competition import Competition
 from .competitor import Competitor
 from .entry import Entry
 from .organisation_membership import OrganisationMembership
-from .stage_object import StageObject
 from .stage_member import StageMember
+from .stage_object import StageObject
