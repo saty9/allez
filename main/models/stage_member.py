@@ -3,7 +3,10 @@ from django.contrib.postgres.fields import JSONField
 
 
 class StageMember(models.Model):
-    INDEX_POOL_NUMBER = 0
-    competitor = models.ForeignKey('main.Competitor', on_delete=models.PROTECT)
-    stage_object = models.ForeignKey('main.StageObject', on_delete=models.CASCADE)
+    INDEX_POOL_NUMBER = '0'
+    INDEX_POINTS = '1'
+    INDEX_VICTORIES = '2'
+    INDEX_POOL_POSITION = '3'
+    competitor = models.ForeignKey('main.Entry', on_delete=models.PROTECT)
+    stage = models.ForeignKey('main.Stage', on_delete=models.CASCADE)
     data = JSONField()
