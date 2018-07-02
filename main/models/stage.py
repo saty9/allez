@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 from random import random
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django.db.models.expressions import RawSQL
-from . import StageMember
-from functools import reduce
+from .pool_bout import PoolBout
 
 
 class Stage(models.Model):
@@ -14,8 +12,18 @@ class Stage(models.Model):
     stage_types = ((POOL, "Pool"),
                    (DE, "Direct Elimination"),
                    (CULL, "Cull"))
-    next = models.ForeignKey('self', on_delete=models.PROTECT, null=True)
+    NOT_STARTED = 'STD'
+    READY = 'RDY'
+    STARTED = 'GO'
+    FINISHED = 'FIN'
+    LOCKED = 'LCK'
+    states = ((NOT_STARTED, "Not Started"),
+              (READY, "Ready to Start"),
+              (STARTED, "Running"),
+              (FINISHED, "Finished"),
+              (LOCKED, "Finished and Confirmed"))
     type = models.CharField(max_length=3, choices=stage_types)
+    state = models.CharField(max_length=3, choices=states, default=NOT_STARTED)
     data = JSONField()
     competition = models.ForeignKey('main.Competition', on_delete=models.CASCADE)
     number = models.IntegerField()
@@ -23,6 +31,15 @@ class Stage(models.Model):
     def ordered_competitors(self):
         if self.type == self.POOL:
             return PoolStage(self).ordered_fencers()
+        elif self.type == self.CULL:
+            lst2 = None  # fencers who survived the cull
+            lst1 = None  # previous stages ordered fencer
+            temp = set(lst2)
+            lst3 = [value for value in lst1 if value in temp]
+            return lst3
+
+    class Meta:
+        unique_together = ('number', 'competition')
 
 
 class XStage(ABC):
@@ -36,37 +53,24 @@ class XStage(ABC):
 
 
 class PoolStage(XStage):
-    V = 0
-    TS = 1
-    TR = 2
-    bouts = 3
-    pools = {}
+    stage_object = None
 
-    def __init__(self, stage_object):
-        # TODO replace order by after feature is added in django release
-        fencers = stage_object.stagemember_set.order_by(RawSQL("data->>%s", (str(StageMember.INDEX_POOL_POSITION),)))
-        self.pools = {}
-        for index, fencer in enumerate(fencers):
-            print(fencer.data)
-            pool_number = fencer.data[StageMember.INDEX_POOL_NUMBER]
-            if pool_number not in self.pools:
-                self.pools[pool_number] = []
-            data = {'id': fencer.competitor_id,
-                    'points': fencer.data[StageMember.INDEX_POINTS],
-                    'victories': fencer.data[StageMember.INDEX_VICTORIES]}
-            self.pools[pool_number].append(data)
+    def __init__(self, stage_object: Stage):
+        self.stage_object = stage_object
 
     def ordered_fencers(self):
         fencers = []
-        for pool in self.pools:
-            for index, f in enumerate(self.pools[pool]):
-                bouts = len(self.pools[pool]) - 1
-                v = sum(f['victories'])
-                ts = sum(f['points'])
-                tr = reduce((lambda x, y: x + y['points'][index]), [0] + self.pools[pool])
-                fencers.append(self.Fencer(bouts, v, ts, tr, f['id']))
+        for index, p in enumerate(self.stage_object.pool_set.all()):
+            for f in p.poolentry_set.all():
+                bouts_a = PoolBout.objects.filter(fencerA=f)
+                bouts_b = PoolBout.objects.filter(fencerB=f)
+                b = bouts_a.count() + bouts_b.count()
+                v = bouts_a.filter(victoryA=True).count()
+                ts = bouts_a.aggregate(models.Sum('scoreA'))
+                tr = bouts_b.aggregate(models.Sum('scoreA'))
+                fencers.append(self.Fencer(b, v, ts, tr, f.fencer.id))
         fencers.sort(reverse=True)
-        return fencers
+        return list(map((lambda x: x.ID), fencers))
 
     class Fencer:
         bouts = 0
@@ -74,16 +78,16 @@ class PoolStage(XStage):
         TS = 0
         TR = 0
         win_percentage = 0
-        ID = 0  # Entry ID not stage_member ID
+        ID = 0
 
-        def __init__(self, bouts, v, ts, tr, id):
+        def __init__(self, bouts, v, ts, tr, ID):
             self.bouts = bouts
             self.V = v
             self.TS = ts
             self.TR = tr
             self.bouts = bouts
             self.win_percentage = v/bouts
-            self.ID = id
+            self.ID = ID
 
         def __add__(self, other):
             if self.ID == other.ID:
@@ -98,10 +102,10 @@ class PoolStage(XStage):
         def __lt__(self, other):
             if self.win_percentage != other.win_percentage:
                 return self.win_percentage < other.win_percentage
-            elif (self.HS - self.HR) != (other.HS - other.HR):
-                return (self.HS - self.HR) < (other.HS - other.HR)
-            elif self.HS != other.HS:
-                return self.HS < other.HS
+            elif (self.TS - self.TR) != (other.TS - other.TR):
+                return (self.TS - self.TR) < (other.TS - other.TR)
+            elif self.TS != other.TS:
+                return self.TS < other.TS
             else:
                 return bool(random.getrandbits(1))
 

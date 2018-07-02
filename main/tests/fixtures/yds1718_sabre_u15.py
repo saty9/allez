@@ -20,9 +20,7 @@ class TestCase:
     def __init__(self):
         self.org = models.Organisation(address=None, name='f4sf', email='a@b.com', contactNumber='07990624284')
         self.org.save()
-        self.structure = models.CompetitionStructure(name='YDS default', stage1=self.s1)
-        self.structure.save()
-        self.comp = models.Competition(organisation=self.org, date=timezone.now().date(), structure=self.structure)
+        self.comp = models.Competition(organisation=self.org, date=timezone.now().date())
         self.comp.save()
         self.s1 = models.Stage(type=models.Stage.POOL, data={}, competition=self.comp, number=1)
         self.s1.save()
@@ -49,33 +47,26 @@ class TestCase:
         for f in [self.f1, self.f2, self.f3, self.f4]:
             e = models.Entry(competition=self.comp, competitor=f)
             e.save()
-            for stage in [self.s1, self.s2, self.s3]:
-                sm = models.StageMember(competitor=e, stage=stage, data={})
-                sm.save()
-        sm = self.f1.entry_set.first().stagemember_set.first()
-        sm.data = {models.StageMember.INDEX_POOL_NUMBER: 1,
-                   models.StageMember.INDEX_POOL_POSITION: 1,
-                   models.StageMember.INDEX_POINTS: [0, 5, 5, 5],
-                   models.StageMember.INDEX_VICTORIES: [False, True, True, True]}
-        sm.save()
-        sm = self.f2.entry_set.first().stagemember_set.first()
-        sm.data = {models.StageMember.INDEX_POOL_NUMBER: 1,
-                   models.StageMember.INDEX_POOL_POSITION: 2,
-                   models.StageMember.INDEX_POINTS: [1, 0, 1, 2],
-                   models.StageMember.INDEX_VICTORIES: [False, False, False, False]}
-        sm.save()
-        sm = self.f3.entry_set.first().stagemember_set.first()
-        sm.data = {models.StageMember.INDEX_POOL_NUMBER: 1,
-                   models.StageMember.INDEX_POOL_POSITION: 3,
-                   models.StageMember.INDEX_POINTS: [1, 5, 0, 5],
-                   models.StageMember.INDEX_VICTORIES: [False, True, False, True]}
-        sm.save()
-        sm = self.f4.entry_set.first().stagemember_set.first()
-        sm.data = {models.StageMember.INDEX_POOL_NUMBER: 1,
-                   models.StageMember.INDEX_POOL_POSITION: 4,
-                   models.StageMember.INDEX_POINTS: [0, 5, 1, 0],
-                   models.StageMember.INDEX_VICTORIES: [False, True, False, False]}
-        sm.save()
+        for stage in [self.s1, self.s2, self.s3]:
+            p = models.Pool(stage=stage, number=1)
+            p.save()
+
+        # Round 1
+        p = models.Pool.objects.filter(stage=self.s1).first()
+        pe1 = models.PoolEntry.objects.create(fencer=self.f1.entry_set.first(), pool=p, number=1)
+        pe2 = models.PoolEntry.objects.create(fencer=self.f2.entry_set.first(), pool=p, number=2)
+        pe3 = models.PoolEntry.objects.create(fencer=self.f3.entry_set.first(), pool=p, number=3)
+        pe4 = models.PoolEntry.objects.create(fencer=self.f4.entry_set.first(), pool=p, number=4)
+
+        models.PoolBout.create(pe1, pe2, 5, 1, True)
+        models.PoolBout.create(pe1, pe3, 5, 1, True)
+        models.PoolBout.create(pe1, pe4, 5, 0, True)
+        models.PoolBout.create(pe2, pe3, 1, 5, False)
+        models.PoolBout.create(pe2, pe4, 2, 5, False)
+        models.PoolBout.create(pe3, pe4, 5, 1, True)
+
+
+
 
 
 
