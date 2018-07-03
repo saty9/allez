@@ -16,9 +16,9 @@ def pools(request, stage: Stage):
     context = {}
     pool_list = []
     for p in stage.pool_set.order_by('number').all():
-        pools.append(gen_pool_data(p))
-    context['pools'] = pools
-    return render(request, 'main/pool/pools.html')
+        pool_list.append(gen_pool_data(p)[1:])
+    context['pools'] = pool_list
+    return render(request, 'main/pool/pools_filled.html', context)
 
 
 def pools_pdf(request, stage: Stage):

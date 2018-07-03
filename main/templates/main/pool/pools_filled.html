@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% for p in pools %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>#</th>
+            {% for f in p %}
+                <th>{{ forloop.counter }}</th>
+            {% endfor %}
+            <th></th>
+            <th>V</th>
+            <th>TS</th>
+            <th>TS</th>
+            <th>Ind</th>
+        </tr>
+        {% for f in p %}
+            <tr>
+                {% for x in f %}
+                    <td>{{ x }}</td>
+                {%  endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endfor %}
+</body>
+</html>
