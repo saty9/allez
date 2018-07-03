@@ -20,7 +20,7 @@ class TestCase:
     def __init__(self):
         self.org = models.Organisation(address=None, name='f4sf', email='a@b.com', contactNumber='07990624284')
         self.org.save()
-        self.comp = models.Competition(organisation=self.org, date=timezone.now().date())
+        self.comp = models.Competition(organisation=self.org, date=timezone.now().date(), name='YDS Round 1')
         self.comp.save()
         self.s1 = models.Stage(type=models.Stage.POOL, data={}, competition=self.comp, number=1)
         self.s1.save()

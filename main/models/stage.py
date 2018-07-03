@@ -64,13 +64,13 @@ class PoolStage(XStage):
             for f in p.poolentry_set.all():
                 bouts_a = PoolBout.objects.filter(fencerA=f)
                 bouts_b = PoolBout.objects.filter(fencerB=f)
-                b = bouts_a.count() + bouts_b.count()
+                b = bouts_a.count()
                 v = bouts_a.filter(victoryA=True).count()
-                ts = bouts_a.aggregate(models.Sum('scoreA'))
-                tr = bouts_b.aggregate(models.Sum('scoreA'))
-                fencers.append(self.Fencer(b, v, ts, tr, f.fencer.id))
+                ts = bouts_a.aggregate(models.Sum('scoreA'))['scoreA__sum']
+                tr = bouts_b.aggregate(models.Sum('scoreA'))['scoreA__sum']
+                fencers.append(self.Fencer(b, v, ts, tr, f.entry_id))
         fencers.sort(reverse=True)
-        return list(map((lambda x: x.ID), fencers))
+        return fencers
 
     class Fencer:
         bouts = 0
@@ -102,18 +102,21 @@ class PoolStage(XStage):
         def __lt__(self, other):
             if self.win_percentage != other.win_percentage:
                 return self.win_percentage < other.win_percentage
-            elif (self.TS - self.TR) != (other.TS - other.TR):
-                return (self.TS - self.TR) < (other.TS - other.TR)
+            elif self.ind() != other.ind():
+                return self.ind() < other.ind()
             elif self.TS != other.TS:
                 return self.TS < other.TS
             else:
                 return bool(random.getrandbits(1))
 
         def __str__(self):
-            return "V:{:.03}, Ind:{}, TS:{}".format(self.win_percentage, self.TS - self.TR, self.TS)
+            return "V:{:.03}, Ind:{}, TS:{}".format(self.win_percentage, self.ind(), self.TS)
 
         def __repr__(self):
             if str(self):
                 return str(self)
             else:
                 "FENCER OBJECT WITH ERROR"
+
+        def ind(self):
+            return self.TS - self.TR

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<table>
+    <tr>
+        <th>Pl</th>
+        <th>Name</th>
+        <th>Club</th>
+        <th>V/M</th>
+        <th>TS</th>
+        <th>TR</th>
+        <th>Ind</th>
+    </tr>
+    {% for index, tuple in competitors %}
+        <tr>
+            <td>{{ index | add:1 }}</td>
+            <td>{{ tuple.0.name }}</td>
+            <td>{{ tuple.0.club.name }}</td>
+            <td>{{ tuple.1.win_percentage| floatformat:2 }}</td>
+            <td>{{ tuple.1.TS }}</td>
+            <td>{{ tuple.1.TR }}</td>
+            <td>{{ tuple.1.ind }}</td>
+        </tr>
+    {% endfor %}
+
+</table>
+</body>
+</html>
