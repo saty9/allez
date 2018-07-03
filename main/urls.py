@@ -17,7 +17,8 @@ from django.urls import path
 from. import views
 
 urlpatterns = [
-    path('comp/<int:comp_id>/stage/<int:stage_number>', views.stage_router, name='main/stage'),
-    path('comp/<int:comp_id>/stage/<int:stage_number>/pdf', views.stage_router_pdf, name='main/stage/pdf'),
-    path('comp/<int:comp_id>/stage/<int:stage_number>/results', views.stage_router_seeding, name='main/stage/results')
+    path('<int:comp_id>/<int:stage_number>', views.stage_router, name='main/stage'),
+    path('<int:comp_id>/<int:stage_number>.pdf', views.stage_router_pdf, name='main/stage/pdf'),
+    path('<int:comp_id>/<int:stage_number>/results', views.stage_router_results, name='main/stage/results'),
+    path('<int:comp_id>/<int:stage_number>/results.pdf', views.stage_router_results_pdf, name='main/stage/results/pdf')
 ]
