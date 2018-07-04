@@ -5,7 +5,7 @@ from .pool_bout import PoolBout
 
 class PoolStage(models.Model):
     stage = models.ForeignKey('main.Stage', on_delete=models.CASCADE)
-    carry_results = models.BooleanField(default=False)
+    carry_previous_results = models.BooleanField(default=False)
 
     def ordered_competitors(self):
         results = self.results()
@@ -13,6 +13,10 @@ class PoolStage(models.Model):
         return list(map(lambda x: x.entry, results))
 
     def results(self):
+        """returns an unordered list of PoolStage.Fencer's
+        if carry_previous_results is True then it will merge in results from the last round of pools
+        if a fencer was in the last set of results but is not in the new one they are dropped from the results
+        """
         fencers = []
         for index, p in enumerate(self.pool_set.all()):
             for f in p.poolentry_set.all():
@@ -23,6 +27,24 @@ class PoolStage(models.Model):
                 ts = bouts_a.aggregate(models.Sum('scoreA'))['scoreA__sum']
                 tr = bouts_b.aggregate(models.Sum('scoreA'))['scoreA__sum']
                 fencers.append(self.Fencer(b, v, ts, tr, f.entry))
+        if self.carry_previous_results:
+            previous_stage = self.stage.competition.stage_set.get(number=self.stage.number - 1)
+            assert previous_stage.type == previous_stage.POOL,\
+                "Cannot carry results forward if previous stage was not a pool"
+            assert previous_stage.poolstage_set.first(), "PoolStage for previous stage missing"
+
+            old_results = previous_stage.poolstage_set.first().results()
+            out = []
+            for f in fencers:
+                found = False
+                for o in old_results:
+                    if f.entry.id == o.entry.id:
+                        found = True
+                        out.append(f + o)
+                        break
+                if not found:
+                    out.append(f)
+            fencers = out
         return fencers
 
     class Fencer:
@@ -44,11 +66,11 @@ class PoolStage(models.Model):
 
         def __add__(self, other):
             if self.entry.id == other.entry.id:
-                return self.Fencer(self.bouts + other.bouts,
-                                   self.V + other.V,
-                                   self.TS + other.TS,
-                                   self.TR + other.TR,
-                                   self.entry)
+                return self.__class__(self.bouts + other.bouts,
+                              self.V + other.V,
+                              self.TS + other.TS,
+                              self.TR + other.TR,
+                              self.entry)
             else:
                 ArithmeticError('cant add different fencers results')
 

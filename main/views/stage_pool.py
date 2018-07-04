@@ -15,7 +15,7 @@ headerStyle = styles.ParagraphStyle('header',
 def pools(request, stage: Stage):
     context = {}
     pool_list = []
-    for p in stage.pool_set.order_by('number').all():
+    for p in stage.poolstage_set.first().pool_set.order_by('number').all():
         pool_list.append(gen_pool_data(p)[1:])
     context['pools'] = pool_list
     return render(request, 'main/pool/pools_filled.html', context)
@@ -31,11 +31,11 @@ def pools_pdf(request, stage: Stage):
                  ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.black),
                  ('BOX', (0, 0), (-1, -1), 0.5, colors.black)]
 
-    header = Paragraph("<u>{} - Round {}</u>".format(stage.competition.name,stage.number), headerStyle)
+    header = Paragraph("<u>{} - Round {}</u>".format(stage.competition.name, stage.number), headerStyle)
 
     doc = []
     # iterating over each pool in the stage to make results sheets for them
-    for pool in stage.pool_set.order_by('number').all():
+    for pool in stage.poolstage_set.first().pool_set.order_by('number').all():
         table = Table(gen_pool_data(pool))
         # blanking cells where fencers would fight themselves
         style = list(basestyle)
@@ -54,19 +54,18 @@ def pools_pdf(request, stage: Stage):
 
 def results(request, stage: Stage):
     context = {}
-    fencer_details = stage.ordered_competitors()
-    competitors = map(lambda x: (Entry.objects.get(pk=x.ID).competitor, x), fencer_details)
+    fencer_details = sorted(stage.poolstage_set.first().results(), reverse=True)
+    competitors = map(lambda x: (x.entry.competitor, x), fencer_details)
     context['competitors'] = enumerate(list(competitors))
     return render(request, 'main/pool/seeding.html', context)
 
 
 def results_pdf(request, stage: Stage):
     data = [['Pl', 'Name', 'Club', 'V/M', 'TS', 'TR', 'Ind']]
-    for index, f in enumerate(stage.ordered_competitors()):
-        entry = Entry.objects.get(pk=f.ID)
+    for index, f in enumerate(sorted(stage.poolstage_set.first().results(), reverse=True)):
         data.append([index + 1,
-                     entry.competitor.name,
-                     entry.competitor.club.name,
+                     f.entry.competitor.name,
+                     f.entry.competitor.club.name,
                      "{:.2}".format(f.win_percentage),
                      f.TS,
                      f.TR,

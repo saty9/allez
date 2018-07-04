@@ -3,7 +3,7 @@ from django.db import models
 
 class Pool(models.Model):
     """Represents a single pool in a stage"""
-    stage = models.ForeignKey('main.Stage', on_delete=models.PROTECT)
+    stage = models.ForeignKey('main.PoolStage', on_delete=models.PROTECT)
     number = models.IntegerField()
 
     def bout_order(self):
