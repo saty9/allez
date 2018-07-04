@@ -3,7 +3,7 @@ from django.db import models
 
 class DeTableEntry(models.Model):
     table = models.ForeignKey('main.DeTable', on_delete=models.CASCADE)
-    entry = models.ForeignKey('main.Entry', on_delete=models.CASCADE)
+    entry = models.ForeignKey('main.Entry', on_delete=models.CASCADE, null=True)
     score = models.IntegerField()
     victory = models.BooleanField()
     table_pos = models.IntegerField()

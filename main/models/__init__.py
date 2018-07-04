@@ -6,6 +6,7 @@ from .competition import Competition
 from .competitor import Competitor
 from .entry import Entry
 from .organisation_membership import OrganisationMembership
+from .pool_stage import PoolStage
 from .pool import Pool
 from .pool_entry import PoolEntry
 from .pool_bout import PoolBout
