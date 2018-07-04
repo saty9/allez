@@ -9,7 +9,7 @@ from .organisation_membership import OrganisationMembership
 from .pool import Pool
 from .pool_entry import PoolEntry
 from .pool_bout import PoolBout
-from .de import De
+from .de_stage import DeStage
 from .de_seed import DeSeed
 from .de_table import DeTable
 from .de_table_entry import DeTableEntry

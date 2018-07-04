@@ -2,8 +2,8 @@ from django.db import models
 
 
 class DeTable(models.Model):
-    de = models.ForeignKey('main.De', on_delete=models.CASCADE)
-    parent = models.ForeignKey('main.DeTable', on_delete=models.CASCADE)
+    de = models.ForeignKey('main.DeStage', on_delete=models.CASCADE)
+    parent = models.ForeignKey('main.DeTable', on_delete=models.CASCADE, related_name='children')
     winners = models.BooleanField()
 
     def ordered_competitors(self):
