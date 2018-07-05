@@ -97,27 +97,22 @@ class TestCase:
 
         self.s4 = models.Stage.objects.create(type=models.Stage.DE, competition=self.comp, data={}, number=4)
         self.de = models.DeStage.objects.create(stage=self.s4, fight_down_to=4)
-        self.de.create_seeds()
-        de_table = models.DeTable.objects.create(de=self.de, parent=None)
+        self.de.start()
 
-        models.DeTableEntry.objects.create(table=de_table, entry=self.f1.entry_set.first(), victory=True, score=15,
-                                           table_pos=0)
-        models.DeTableEntry.objects.create(table=de_table, entry=self.f2.entry_set.first(), victory=False, score=5,
-                                           table_pos=1)
-        models.DeTableEntry.objects.create(table=de_table, entry=self.f4.entry_set.first(), victory=False, score=5,
-                                           table_pos=2)
-        models.DeTableEntry.objects.create(table=de_table, entry=self.f3.entry_set.first(), victory=True, score=15,
-                                           table_pos=3)
+        table = self.de.detable_set.first()
 
-        de_table_w = models.DeTable.objects.create(de=self.de, parent=de_table, winners=True)
-        de_table_l = models.DeTable.objects.create(de=self.de, parent=de_table, winners=False)
+        table.detableentry_set.filter(entry=self.f1.entry_set.first()).update(victory=True, score=15)
+        table.detableentry_set.filter(entry=self.f2.entry_set.first()).update(victory=False, score=5)
+        table.detableentry_set.filter(entry=self.f3.entry_set.first()).update(victory=True, score=15)
+        table.detableentry_set.filter(entry=self.f4.entry_set.first()).update(victory=False, score=7)
 
-        models.DeTableEntry.objects.create(table=de_table_w, entry=self.f1.entry_set.first(), victory=True, score=15,
-                                           table_pos=0)
-        models.DeTableEntry.objects.create(table=de_table_w, entry=self.f3.entry_set.first(), victory=False, score=0,
-                                           table_pos=1)
+        table.make_children()
 
-        models.DeTableEntry.objects.create(table=de_table_l, entry=self.f2.entry_set.first(), victory=False, score=5,
-                                           table_pos=0)
-        models.DeTableEntry.objects.create(table=de_table_l, entry=self.f4.entry_set.first(), victory=True, score=15,
-                                           table_pos=1)
+        de_table_w = table.children.get(winners=True)
+        de_table_l = table.children.get(winners=False)
+
+        de_table_w.detableentry_set.filter(entry=self.f1.entry_set.first()).update(victory=True, score=15)
+        de_table_w.detableentry_set.filter(entry=self.f3.entry_set.first()).update(victory=False, score=0)
+
+        de_table_l.detableentry_set.filter(entry=self.f2.entry_set.first()).update(victory=False, score=5)
+        de_table_l.detableentry_set.filter(entry=self.f4.entry_set.first()).update(victory=True, score=15)
