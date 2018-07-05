@@ -15,3 +15,5 @@ class DeTableEntry(models.Model):
         else:
             return DeTableEntry.objects.get(table=self.table, table_pos=self.table_pos + 1)
 
+    def __str__(self):
+        return str(self.entry)
