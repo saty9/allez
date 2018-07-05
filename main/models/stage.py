@@ -36,5 +36,12 @@ class Stage(models.Model):
             lst3 = [value for value in lst1 if value in temp]
             return lst3
 
+    def input(self):
+        """returns a list of entries representing the input of this stage"""
+        if self.number == 0:
+            pass  # TODO implement method for adding fencers
+        else:
+            return Stage.objects.get(competition_id=self.competition_id, number=self.number-1).ordered_competitors()
+
     class Meta:
         unique_together = ('number', 'competition')
