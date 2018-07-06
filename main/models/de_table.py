@@ -23,7 +23,9 @@ class DeTable(models.Model):
     def automated(self) -> bool:
         """Returns if this table can be automated.
         A table can be automated if no winners from it can be ranked >= the de's fight down to"""
-        return not self.winners and self.max_rank() > self.de.fight_down_to
+        return not self.winners and \
+               not self.detableentry_set.filter(entry__isnull=False).exists() and \
+               self.max_rank() > self.de.fight_down_to
 
     def max_rank(self) -> int:
         """returns the maximum rank attainable by competitors in this table"""
@@ -47,9 +49,9 @@ class DeTable(models.Model):
         losers = self.children.create(de=self.de, winners=False)
         for e in self.detableentry_set.all():
             if e.victory:
-                winners.detableentry_set.create(entry=e.entry, table_pos=e.table_pos//2)
+                winners.detableentry_set.create(entry=e.entry, table_pos=e.table_pos // 2)
             else:
-                losers.detableentry_set.create(entry=e.entry, table_pos=e.table_pos//2)
+                losers.detableentry_set.create(entry=e.entry, table_pos=e.table_pos // 2)
 
         # byes automatically lose their fights
         for bye in losers.detableentry_set.filter(entry__isnull=True).all():
@@ -58,7 +60,6 @@ class DeTable(models.Model):
                 against = bye.against()
                 against.victory = True
                 against.save()
-
 
 
 class UnfinishedTableException(Exception):
