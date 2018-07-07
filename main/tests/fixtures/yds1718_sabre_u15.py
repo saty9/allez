@@ -50,11 +50,8 @@ class TestCase:
         self.f4 = models.Competitor(name='H, K', license_number=3, club=self.club3)
         self.f4.save()
         for index, f in enumerate([self.f4, self.f3, self.f2, self.f1]):
-            self.add_stage.addcompetitor_set.create(competitor=f, sequence=index)
-            # e = models.Entry(competition=self.comp, competitor=f)
-            # e.save()
-        # for pool_stage in [self.ps1, self.ps2, self.ps3]:
-        #     p = models.Pool.objects.create(stage=pool_stage, number=1)
+            e = self.comp.entry_set.create(competitor=f, state=models.Entry.CHECKED_IN)
+            self.add_stage.addcompetitor_set.create(entry=e, sequence=index)
         self.ps1.start(1)
 
         # Round 1

@@ -1,4 +1,5 @@
 from django.db import models
+from .entry import Entry
 
 
 class AddStage(models.Model):
@@ -7,16 +8,14 @@ class AddStage(models.Model):
     choices = ((TOP, "Top of Rankings"),
                (BOTTOM, "Bottom of Rankings"))
     stage = models.ForeignKey('main.Stage', on_delete=models.CASCADE)
-    where = models.CharField(max_length=3, choices=choices, default=BOTTOM)
+    where = models.CharField(max_length=3, choices=choices, default=TOP)
     run = models.BooleanField(default=False)
 
     def ordered_competitors(self):
-        if not self.run:
-            self.create_new_entries()
         input_entries = self.stage.input()
-        comp = self.stage.competition
-        additions = [addition.competitor.entry_set.get(competition=comp)
-                     for addition in self.addcompetitor_set.order_by('sequence').all()]
+        additions = [addition.entry
+                     for addition in self.addcompetitor_set.order_by('sequence')
+                     .exclude(entry__state=Entry.NOT_CHECKED_IN).all()]
         if self.where == self.TOP:
             additions.extend(input_entries)
             out = additions
@@ -24,10 +23,3 @@ class AddStage(models.Model):
             input_entries.extend(additions)
             out = input_entries
         return out
-
-    def create_new_entries(self):
-        assert not self.run, "Cant create an add stages entries twice"
-        for competitor in self.addcompetitor_set.all():
-            self.stage.competition.entry_set.create(competitor=competitor.competitor)
-        self.run = True
-        self.save()
