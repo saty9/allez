@@ -44,9 +44,7 @@ def attempt_solve(pools_in: List[List[Entry]]) -> List[List[Entry]]:
                     for conflicting_club in conflicts[x].keys():
                         if not contains_club(pools[x + 1], conflicting_club):
                             # now checking for possible swap with the pool x + 1
-                            y = 2
                             for conflict_index in conflicts[x][conflicting_club]:
-                                y -= 1
                                 if len(pools[x + 1]) >= conflict_index:
                                     current = pools[x + 1][conflict_index]
                                     if not contains_club(pools[x], current[1]) and not \
@@ -61,6 +59,9 @@ def attempt_solve(pools_in: List[List[Entry]]) -> List[List[Entry]]:
                                         break
         if not swapped_large:
             break
+
+    for index, pool in enumerate(pools):
+        pools_in[index] = list(map(lambda y: y[0], pool))
 
 
 def contains_club(pool: List[Tuple[Entry, Club, bool]], club: Club) -> bool:
