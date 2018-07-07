@@ -22,6 +22,8 @@ class TestCase:
         self.org.save()
         self.comp = models.Competition(organisation=self.org, date=timezone.now().date(), name='YDS Round 1')
         self.comp.save()
+        self.s0 = models.Stage.objects.create(type=models.Stage.ADD, data={}, competition=self.comp, number=0)
+        self.add_stage = self.s0.addstage_set.create()
         self.s1 = models.Stage(type=models.Stage.POOL, data={}, competition=self.comp, number=1)
         self.s1.save()
         self.ps1 = models.PoolStage.objects.create(stage=self.s1)
@@ -47,19 +49,20 @@ class TestCase:
         self.f3.save()
         self.f4 = models.Competitor(name='H, K', license_number=3, club=self.club3)
         self.f4.save()
-        for f in [self.f1, self.f2, self.f3, self.f4]:
-            e = models.Entry(competition=self.comp, competitor=f)
-            e.save()
+        for index, f in enumerate([self.f4, self.f3, self.f2, self.f1]):
+            self.add_stage.addcompetitor_set.create(competitor=f, sequence=index)
+            # e = models.Entry(competition=self.comp, competitor=f)
+            # e.save()
         # for pool_stage in [self.ps1, self.ps2, self.ps3]:
         #     p = models.Pool.objects.create(stage=pool_stage, number=1)
-        p =models.Pool.objects.create(stage=self.ps1, number=1)
+        self.ps1.start(1)
 
         # Round 1
         p = models.Pool.objects.get(stage=self.ps1)
-        pe1 = models.PoolEntry.objects.create(entry=self.f1.entry_set.first(), pool=p, number=1)
-        pe2 = models.PoolEntry.objects.create(entry=self.f2.entry_set.first(), pool=p, number=2)
-        pe3 = models.PoolEntry.objects.create(entry=self.f3.entry_set.first(), pool=p, number=3)
-        pe4 = models.PoolEntry.objects.create(entry=self.f4.entry_set.first(), pool=p, number=4)
+        pe1 = models.PoolEntry.objects.get(entry=self.f1.entry_set.first(), pool=p)
+        pe2 = models.PoolEntry.objects.get(entry=self.f2.entry_set.first(), pool=p)
+        pe3 = models.PoolEntry.objects.get(entry=self.f3.entry_set.first(), pool=p)
+        pe4 = models.PoolEntry.objects.get(entry=self.f4.entry_set.first(), pool=p)
 
         models.PoolBout.create(pe1, pe2, 5, 1, True)
         models.PoolBout.create(pe1, pe3, 5, 1, True)

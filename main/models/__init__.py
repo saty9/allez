@@ -14,3 +14,6 @@ from .de_stage import DeStage
 from .de_seed import DeSeed
 from .de_table import DeTable
 from .de_table_entry import DeTableEntry
+from .add_stage import AddStage
+from .add_competitor import AddCompetitor
+from .cull_stage import CullStage

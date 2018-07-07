@@ -1,15 +1,19 @@
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from .pool_stage import PoolStage
+from .add_stage import AddStage
+from .cull_stage import CullStage
 
 
 class Stage(models.Model):
     POOL = 'POO'
     DE = 'DEL'
     CULL = 'CUL'
+    ADD = 'ADD'
     stage_types = ((POOL, "Pool"),
                    (DE, "Direct Elimination"),
-                   (CULL, "Cull"))
+                   (CULL, "Cull"),
+                   (ADD, "Add Fencers"))
     NOT_STARTED = 'STD'
     READY = 'RDY'
     STARTED = 'GO'
@@ -30,16 +34,14 @@ class Stage(models.Model):
         if self.type == self.POOL:
             return PoolStage.objects.get(stage=self).ordered_competitors()
         elif self.type == self.CULL:
-            lst2 = None  # fencers who survived the cull
-            lst1 = None  # previous stages ordered fencer
-            temp = set(lst2)
-            lst3 = [value for value in lst1 if value in temp]
-            return lst3
+            return CullStage.objects.get(stage=self).ordered_competitors()
+        elif self.type == self.ADD:
+            return AddStage.objects.get(stage=self).ordered_competitors()
 
     def input(self):
         """returns a list of entries representing the input of this stage"""
-        if self.number == 0:
-            pass  # TODO implement method for adding fencers
+        if not Stage.objects.filter(number__lt=self.number).exists():
+            return []
         else:
             return Stage.objects.get(competition_id=self.competition_id, number=self.number-1).ordered_competitors()
 
