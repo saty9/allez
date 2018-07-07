@@ -1,5 +1,6 @@
 from typing import List, Optional, Tuple, Dict
-from main.models import Entry, Club
+from main.models.entry import Entry
+from main.models.club import Club
 
 
 # TODO rewrite so every switch is a tree branch and use to find optimum (switching order considered important) O(n!)

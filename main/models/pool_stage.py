@@ -1,6 +1,7 @@
 from django.db import models
 from random import random
 from .pool_bout import PoolBout
+from main.utils import attempt_solve
 
 
 class PoolStage(models.Model):
@@ -11,6 +12,35 @@ class PoolStage(models.Model):
         results = self.results()
         results.sort(reverse=True)
         return list(map(lambda x: x.entry, results))
+
+    def start(self, number_of_pools):
+        fencers = self.stage.input()
+        pools = [[] for _ in range(number_of_pools)]
+
+        pool_number = 0
+        x = 0
+
+        # distribute fencers into pools by seed
+        while x < len(fencers):
+            while pool_number <= number_of_pools - 1 and x < len(fencers):
+                pools[pool_number].append(fencers[x])
+                x += 1
+                pool_number += 1
+            pool_number -= 1
+            while pool_number >= 0 and x < len(fencers):
+                pools[pool_number].append(fencers[x])
+                x += 1
+                pool_number -= 1
+            pool_number += 1
+
+        attempt_solve(pools)
+
+        # build database entries
+        for index, pool in enumerate(pools):
+            db_pool = self.pool_set.create(number=index + 1)
+            for pool_pos, entry in enumerate(pool):
+                db_pool.poolentry_set.create(entry=entry, number=pool_pos + 1)
+
 
     def results(self):
         """returns an unordered list of PoolStage.Fencer's
