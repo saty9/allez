@@ -7,6 +7,17 @@ class Pool(models.Model):
     number = models.IntegerField()
     referee = models.ForeignKey('main.Referee', on_delete=models.PROTECT, null=True, default=None)
 
+    def complete(self):
+        """returns whether all bouts in this pool have been fought"""
+        victories = 0
+        expected = 0
+        add = 0
+        for p_entry in self.poolentry_set.all():
+            victories += p_entry.victories()
+            expected += add
+            add += 1
+        return victories == expected
+
     def bout_order(self):
         """returns a string indicating order fencers should fight each other"""
         # TODO add different behaviour if fencers from the same team are in a pool
