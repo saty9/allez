@@ -5,6 +5,7 @@ class Pool(models.Model):
     """Represents a single pool in a stage"""
     stage = models.ForeignKey('main.PoolStage', on_delete=models.PROTECT)
     number = models.IntegerField()
+    referee = models.ForeignKey('main.Referee', on_delete=models.PROTECT, null=True, default=None)
 
     def bout_order(self):
         """returns a string indicating order fencers should fight each other"""

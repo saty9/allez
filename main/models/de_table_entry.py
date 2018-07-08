@@ -7,6 +7,7 @@ class DeTableEntry(models.Model):
     score = models.IntegerField(default=0)
     victory = models.BooleanField(default=False)
     table_pos = models.IntegerField()
+    referee = models.ForeignKey('main.Referee', null=True, on_delete=models.PROTECT, default=None)
 
     def against(self):
         """returns the DeTableEntry this one is fighting against"""

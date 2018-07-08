@@ -3,6 +3,7 @@ from .club import Club
 from .stage import Stage
 from .organisation import Organisation
 from .competition import Competition
+from .referee import Referee
 from .competitor import Competitor
 from .entry import Entry
 from .organisation_membership import OrganisationMembership
