@@ -1,6 +1,7 @@
 from django.db import models
 from random import random
 from .pool_bout import PoolBout
+from .entry import Entry
 from main.utils import attempt_solve
 
 
@@ -41,7 +42,6 @@ class PoolStage(models.Model):
             for pool_pos, entry in enumerate(pool):
                 db_pool.poolentry_set.create(entry=entry, number=pool_pos + 1)
 
-
     def results(self):
         """returns an unordered list of PoolStage.Fencer's
         if carry_previous_results is True then it will merge in results from the last round of pools
@@ -49,9 +49,12 @@ class PoolStage(models.Model):
         """
         fencers = []
         for index, p in enumerate(self.pool_set.all()):
+            excluded = p.poolentry_set.\
+                filter(entry__state__in=[Entry.EXCLUDED, Entry.DID_NOT_FINISH, Entry.DID_NOT_START],
+                       entry__exited_at_stage=self.stage).all()
             for f in p.poolentry_set.all():
-                bouts_a = PoolBout.objects.filter(fencerA=f)
-                bouts_b = PoolBout.objects.filter(fencerB=f)
+                bouts_a = PoolBout.objects.filter(fencerA=f).exclude(fencerA__in=excluded)
+                bouts_b = PoolBout.objects.filter(fencerB=f).exclude(fencerB__in=excluded)
                 b = bouts_a.count()
                 v = bouts_a.filter(victoryA=True).count()
                 ts = bouts_a.aggregate(models.Sum('scoreA'))['scoreA__sum']
