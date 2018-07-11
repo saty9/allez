@@ -4,6 +4,9 @@ from .pool_entry import PoolEntry
 
 class PoolBout(models.Model):
     """Represents 1 side of a bout between 2 fencers"""
+    class Meta:
+        unique_together = (('fencerA', 'fencerB'),)
+
     fencerA = models.ForeignKey('main.PoolEntry', on_delete=models.PROTECT, related_name='fencerA_bout_set')
     fencerB = models.ForeignKey('main.PoolEntry', on_delete=models.PROTECT, related_name='fencerB_bout_set')
     scoreA = models.IntegerField()
