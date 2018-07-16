@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from main.models import Pool, Stage
-from rules.contrib.views import permission_required
+from main.helpers.permissions import permission_required_json
+from main.models import Pool, Stage, PoolBout
 import logging
 
 
@@ -13,7 +13,7 @@ def pool(request, pool_id):
         pass
 
 
-@permission_required('main.change_pool')
+@permission_required_json('main.change_pool')
 def update_pool(request, pool):
     """handles POST requests to update pools"""
     if pool.stage.stage.state != Stage.STARTED:
