@@ -1,33 +1,26 @@
-{% load pool_edit_helpers %}
+{%  extends 'ui/base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="UTF-8">
-    <title>Title</title>
-    {% csrf_token %}
-    <style>
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-    </style>
-    <link rel="stylesheet" href="{% static "jquery-ui-dist/jquery-ui.min.css"%}">
-    <link rel="stylesheet" href="{% static "bootstrap/dist/css/bootstrap.min.css"%}">
-</head>
-<body>
+{% block title %}Edit Pool{% endblock %}
 
+{% block styles %}<style>
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+{% endblock %}
+
+{% block scripts %}
 <script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
-<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
-<script src="{% static 'jquery-ui-dist/jquery-ui.min.js' %}"></script>
 <script src="{% static 'ui/templates/pool.js' %}"></script>
-<script src="{% static 'bootstrap/dist/js/bootstrap.min.js' %}"></script>
 <script>
     var results;
     var entries;
@@ -179,5 +172,4 @@
         e.preventDefault();
     });
 </script>
-</body>
-</html>
+{% endblock %}
