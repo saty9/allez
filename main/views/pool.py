@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from main.helpers.permissions import permission_required_json
@@ -10,7 +11,10 @@ def pool(request, pool_id):
     if request.method == "POST":
         return update_pool(request, pool)
     else:
-        pass
+        entry_data = list(pool.poolentry_set.values('id', 'number', name=F('entry__competitor__name')).all())
+        bouts_data = list(PoolBout.objects.filter(fencerA__in=pool.poolentry_set.all())
+                          .values().all())
+        return JsonResponse({'entries': entry_data, 'bouts': bouts_data})
 
 
 @permission_required_json('main.change_pool')

@@ -1,0 +1,20 @@
+<table>
+    <tr>
+        <th>Name</th>
+        <th>#</th>
+        {{#each entries}}
+            <th>
+                {{this.number}}
+            </th>
+        {{/each}}
+    </tr>
+    {{#each entries as |fencerA key|}}
+        <tr>
+            <td>{{fencerA.name}}</td>
+            <td>{{fencerA.number}}</td>
+            {{#each ../entries as |fencerB childKey|}}
+                <td><div class="col-xs-1">{{{boutHelper fencerA.id fencerB.id}}}</div></td>
+            {{/each}}
+        </tr>
+    {{/each}}
+</table>

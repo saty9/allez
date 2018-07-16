@@ -1,0 +1,183 @@
+{% load pool_edit_helpers %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% csrf_token %}
+    <style>
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+    <link rel="stylesheet" href="{% static "jquery-ui-dist/jquery-ui.min.css"%}">
+    <link rel="stylesheet" href="{% static "bootstrap/dist/css/bootstrap.min.css"%}">
+</head>
+<body>
+
+<script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
+<script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+<script src="{% static 'jquery-ui-dist/jquery-ui.min.js' %}"></script>
+<script src="{% static 'ui/templates/pool.js' %}"></script>
+<script src="{% static 'bootstrap/dist/js/bootstrap.min.js' %}"></script>
+<script>
+    var results;
+    var entries;
+    function runTemplate(){
+        $.ajax({
+            type:'GET',
+            url: '{% url 'main/pool_endpoint' 1 %}',
+            success: function (pool_data) {
+                entries = pool_data.entries;
+                console.log(pool_data);
+                Handlebars.registerHelper('boutHelper', function(a_id, b_id){
+                    console.log('HI');
+                    if (a_id == b_id){
+                        return 'X'
+                    }
+                    return new Handlebars.SafeString('<input type="number" class="form-control" id="'+ a_id+'-'+ b_id +'" min="0">');
+                });
+                $('body').append(Handlebars.templates['pool.hbs'](pool_data));
+                $('input[type="number"]').blur(function() {
+                    var ids = this.id.split('-');
+                    result_added(parseInt(ids[0]), parseInt(ids[1]));
+                });
+                for (var x = 0; x < pool_data.bouts.length; x++){
+                        var bout = pool_data.bouts[x];
+                        set_box_result(bout.fencerA_id, bout.fencerB_id, bout.scoreA, bout.victoryA)
+                }
+            },
+            error: function (data) {
+                console.log(data);
+                window.setTimeout(runTemplate(),1000);
+            }
+        });
+        
+    }
+
+    $(window).bind("load", function() {
+        runTemplate();
+    });
+
+    function set_box_result(id_1, id_2, score, victory){
+        var box = $('#' + id_1 + '-' + id_2);
+        box.prop('readonly', true);
+        box.unbind('blur');
+        box.show();
+        box.val(score);
+        box.on('dblclick touchend',function(){
+            box.unbind('dblclick');
+            box.unbind('touchend');
+            box.prop('readonly', false);
+            var blur = function(){
+                result_added(id_1, id_2)
+            };
+            box.blur(blur);
+        });
+    }
+
+    function result_added(e1, e2) {
+        var box1_id = '#' + e1 + '-' + e2;
+        var box2_id = '#' + e2 + '-' + e1;
+        var e1_box = $(box1_id);
+        var e2_box = $(box2_id);
+         if($.trim(e1_box.val()).length && $.trim(e2_box.val()).length) { // zero-length string AFTER a trim
+             e1_score = parseInt(e1_box.val());
+             e2_score = parseInt(e2_box.val());
+             e1_box.parent().progressbar({value: false});
+             e2_box.parent().progressbar({value: false});
+             e1_box.hide();
+             e2_box.hide();
+             $('confirm text').dialog({
+            modal:true, //Not necessary but dims the page background
+            buttons:{
+            'Yes':function() {
+                //Whatever code you want to run when the user clicks save goes here
+             },
+             'No':function() {
+                 //Code for delete goes here
+              }
+            }
+            });
+            if(e1_score != e2_score){
+                send_result(e1,e2, e1_score > e2_score,e1_score, e2_score)
+            } else {
+                if (confirm("did " + e1_box.get(0).closest('tr').children[0].innerHTML +  " win?")) {
+                    send_result(e1,e2, true,e1_score, e2_score)
+                } else {
+                    send_result(e1,e2, false,e1_score, e2_score)
+                }
+            }
+        }
+    }
+    var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+    function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    function send_result(id_1, id_2, v_1, s_1, s_2) {
+        var e1_box = $('#' + id_1 + '-' + id_2);
+        var e2_box = $('#' + id_2 + '-' + id_1);
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url: '{% url 'main/pool_endpoint' 1 %}',
+            data: {
+                'type': 'bout_result',
+                'entry_1': id_1,
+                'entry_2': id_2,
+                'e1_victory': (v_1) ? 1 : 0,
+                'e1_score': s_1,
+                'e2_score': s_2,
+            },
+            dataType: 'json',
+            success: function (data) {
+                set_box_result(id_1,id_2, s_1, v_1);
+                set_box_result(id_2,id_1, s_2, !v_1);
+                e1_box.parent().progressbar('destroy');
+                e2_box.parent().progressbar('destroy');
+            },
+            error: function (data) {
+                if (data.responseJSON){
+                    console.log(data.responseJSON);
+                } else{
+                    console.log(data);
+                }
+                e1_box.parent().progressbar('destroy');
+                e2_box.parent().progressbar('destroy');
+                e1_box.show();
+                e2_box.show();
+                if (data.responseJSON.reason == "NotLoggedIn"){
+                    $('body').prepend('<div class="alert alert-danger" role="alert">' +
+                        'Please <a class="alert-link" href="">LOGIN</a> to update or add results' +
+                        '</div>')
+                    $('a.alert-link').click(function(){
+                        window.open('{% url 'login' %}?next='+ window.location.pathname)
+                    });
+
+                }
+
+            }
+        });
+    };
+
+    $(':input[type=number]').on('mousewheel', function(e){
+        e.preventDefault();
+    });
+</script>
+</body>
+</html>
