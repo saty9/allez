@@ -12,6 +12,38 @@
     input[type="number"] {
         -moz-appearance: textfield;
     }
+    @keyframes error-blink{
+        from {background-color: rgba(255, 89, 81,255)
+        }
+        to {background-color: rgba(255,89,81,0)}
+    }
+    .blink-error {
+
+        animation-name: error-blink;
+        animation-timing-function: ease;
+        animation-duration: 1s;
+    }
+    .form-control{
+        min-width: 45px;
+    }
+    @media (min-width: 450px){
+        .winner {
+            background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+        .loser {
+            background: url({% static 'ui/images/D.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+    }
+    @media (max-width: 450px){
+        .winner {
+            color: green;
+        }
+        .loser {
+            color: red;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -29,8 +61,11 @@
             type:'GET',
             url: '{% url 'main/pool_endpoint' 1 %}',
             success: function (pool_data) {
-                entries = pool_data.entries;
                 console.log(pool_data);
+                entries = pool_data.entries;
+                entries.sort(function(a,b){
+                   return a.number > b.number;
+                });
                 Handlebars.registerHelper('boutHelper', function(a_id, b_id){
                     console.log('HI');
                     if (a_id == b_id){
@@ -38,7 +73,7 @@
                     }
                     return new Handlebars.SafeString('<input type="number" class="form-control" id="'+ a_id+'-'+ b_id +'" min="0">');
                 });
-                $('body').append(Handlebars.templates['pool.hbs'](pool_data));
+                $('#main-content').append(Handlebars.templates['pool.hbs'](pool_data));
                 $('input[type="number"]').blur(function() {
                     var ids = this.id.split('-');
                     result_added(parseInt(ids[0]), parseInt(ids[1]));
@@ -74,7 +109,14 @@
                 result_added(id_1, id_2)
             };
             box.blur(blur);
+            box.removeClass('winner');
+            box.removeClass('loser');
         });
+        if (victory){
+            box.addClass('winner');
+        } else {
+            box.addClass('loser')
+        }
     }
 
     function result_added(e1, e2) {
@@ -139,10 +181,14 @@
             },
             dataType: 'json',
             success: function (data) {
-                set_box_result(id_1,id_2, s_1, v_1);
-                set_box_result(id_2,id_1, s_2, !v_1);
-                e1_box.parent().progressbar('destroy');
-                e2_box.parent().progressbar('destroy');
+                if (data['success']) {
+                    set_box_result(id_1, id_2, s_1, v_1);
+                    set_box_result(id_2, id_1, s_2, !v_1);
+                    e1_box.parent().progressbar('destroy');
+                    e2_box.parent().progressbar('destroy');
+                } else {
+                    console.log(data);
+                }
             },
             error: function (data) {
                 if (data.responseJSON){
@@ -155,13 +201,14 @@
                 e1_box.show();
                 e2_box.show();
                 if (data.responseJSON.reason == "NotLoggedIn"){
-                    $('body').prepend('<div class="alert alert-danger" role="alert">' +
-                        'Please <a class="alert-link" href="">LOGIN</a> to update or add results' +
-                        '</div>')
-                    $('a.alert-link').click(function(){
-                        window.open('{% url 'login' %}?next='+ window.location.pathname)
-                    });
+                    $('#main-content').prepend('<div class="alert alert-danger" role="alert">' +
+                        'Please <a class="alert-link" href="{% url 'login' %}?next='+ window.location.pathname + '">LOGIN</a> to update or add results' +
+                        '</div>');
+                    e1_box.addClass('blink-error');
+                    e2_box.addClass('blink-error');
 
+                } else {
+                    console.log(data.responseJSON);
                 }
 
             }
