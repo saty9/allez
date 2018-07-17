@@ -73,14 +73,14 @@
                     }
                     return new Handlebars.SafeString('<input type="number" class="form-control" id="'+ a_id+'-'+ b_id +'" min="0">');
                 });
-                $('#main-content').append(Handlebars.templates['pool.hbs'](pool_data));
+                $('#main-content').append(Handlebars.templates.pool(pool_data));
                 $('input[type="number"]').blur(function() {
                     var ids = this.id.split('-');
                     result_added(parseInt(ids[0]), parseInt(ids[1]));
                 });
                 for (var x = 0; x < pool_data.bouts.length; x++){
-                        var bout = pool_data.bouts[x];
-                        set_box_result(bout.fencerA_id, bout.fencerB_id, bout.scoreA, bout.victoryA)
+                    var bout = pool_data.bouts[x];
+                    set_box_result(bout.fencerA_id, bout.fencerB_id, bout.scoreA, bout.victoryA)
                 }
             },
             error: function (data) {
