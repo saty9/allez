@@ -6,3 +6,4 @@ from . import Organisation
 class OrganisationMembership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     organisation = models.ForeignKey(Organisation, on_delete=models.CASCADE)
+    last_active = models.DateTimeField(auto_now_add=True)
