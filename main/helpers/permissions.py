@@ -59,3 +59,7 @@ def permission_required_json(perm, fn=None, login_url=None, raise_exception=Fals
 
         return decorator
 
+
+def direct_object(request, *args, **kwargs):
+    """used to turn an object into a callable that returns that object for permissions decorators"""
+    return args[0]

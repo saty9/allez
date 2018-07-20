@@ -1,7 +1,7 @@
 from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from main.helpers.permissions import permission_required_json
+from main.helpers.permissions import permission_required_json, direct_object
 from main.models import Pool, Stage, PoolBout
 import logging
 
@@ -17,7 +17,7 @@ def pool(request, pool_id):
         return JsonResponse({'entries': entry_data, 'bouts': bouts_data})
 
 
-@permission_required_json('main.change_pool')
+@permission_required_json('main.change_pool', fn=direct_object)
 def update_pool(request, pool):
     """handles POST requests to update pools"""
     if pool.stage.stage.state != Stage.STARTED:

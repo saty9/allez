@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main.apps.MainConfig',
     'ui.apps.UiConfig',
-    'rules'
+    'rules.apps.AutodiscoverRulesConfig',
 ]
 
 MIDDLEWARE = [
