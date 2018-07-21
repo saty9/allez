@@ -1,5 +1,6 @@
 {%  extends 'ui/base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}Edit Pool{% endblock %}
 
@@ -26,6 +27,11 @@
     .form-control{
         min-width: 45px;
     }
+    table{
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
     @media (min-width: 450px){
         .winner {
             background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
@@ -48,9 +54,21 @@
 {% endblock %}
 
 {% block body %}
+    <dialog id="get_winner_dialog">
+        <form method="dialog">
+            <section>
+                <p>{% trans 'Who Won?' noop %}</p>
+            </section>
+            <menu>
+                <button id="d_opt_1"></button>
+                <button id="d_opt_2"></button>
+            </menu>
+        </form>
+    </dialog>
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
 <script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
 <script src="{% static 'ui/templates/pool.js' %}"></script>
 <script>
@@ -131,29 +149,32 @@
              e2_box.parent().progressbar({value: false});
              e1_box.hide();
              e2_box.hide();
-             $('confirm text').dialog({
-            modal:true, //Not necessary but dims the page background
-            buttons:{
-            'Yes':function() {
-                //Whatever code you want to run when the user clicks save goes here
-             },
-             'No':function() {
-                 //Code for delete goes here
-              }
-            }
-            });
+
             if(e1_score != e2_score){
                 send_result(e1,e2, e1_score > e2_score,e1_score, e2_score)
             } else {
-                if (confirm("did " + e1_box.get(0).closest('tr').children[0].innerHTML +  " win?")) {
-                    send_result(e1,e2, true,e1_score, e2_score)
-                } else {
-                    send_result(e1,e2, false,e1_score, e2_score)
-                }
+                var button1 = $('#d_opt_1');
+                var button2 = $('#d_opt_2');
+                var dialog = $('#get_winner_dialog')[0];
+
+                // Update button opens a modal dialog
+                button1.off('click');
+                button1.click(function(){
+                   send_result(e1,e2,true,e1_score,e2_score)
+                });
+                button1.html(e1_box.get(0).closest('tr').children[0].innerHTML);
+
+                button2.off('click');
+                button2.click(function(){
+                   send_result(e1,e2,false,e1_score,e2_score)
+                });
+                button2.html(e2_box.get(0).closest('tr').children[0].innerHTML);
+                dialogPolyfill.registerDialog(dialog);
+                dialog.showModal();
             }
         }
     }
-    var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+    var csrftoken = $("[name=csrfmiddlewaretoken]").val();
     function csrfSafeMethod(method) {
             // these HTTP methods do not require CSRF protection
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
