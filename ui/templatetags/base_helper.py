@@ -8,7 +8,7 @@ register = template.Library()
 @register.simple_tag(name="org_or_login_button")
 def org_or_login(request):
     if request.user.is_authenticated:
-        if request.session['org_id']:
+        if 'org_id' in request.session.keys():
             organisation = Organisation.objects.get(pk=request.session['org_id'])
             return format_html(organisation.name)
         else:
