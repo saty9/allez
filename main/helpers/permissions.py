@@ -42,18 +42,14 @@ def permission_required_json(perm, fn=None, login_url=None, raise_exception=Fals
 
                 # Get the user
                 user = request.user
+                if user.is_anonymous:
+                    return JsonResponse({'success': False, 'reason': 'NotLoggedIn'}, status=403)
 
                 # Check for permissions and return a response
-                if not user.has_perms(perms, obj):
-                    # User does not have a required permission
-                    if user.is_anonymous:
-                        return JsonResponse({'success': False, 'reason': 'NotLoggedIn'}, status=403)
-                    else:
-                        return JsonResponse({'success': False, 'reason': 'InsufficientPermissions'}, status=403)
-
-                else:
-                    # User has all required permissions -- allow the view to execute
+                if user.has_perms(perms, obj):
                     return view_func(request, *args, **kwargs)
+                else:
+                    return JsonResponse({'success': False, 'reason': 'InsufficientPermissions'}, status=403)
 
             return _wrapped_view
 
