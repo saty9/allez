@@ -7,4 +7,5 @@ class Organisation(models.Model):
     address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
     email = models.EmailField()
     contactNumber = models.CharField(max_length=15)
+    slug = models.SlugField(unique=True)
 
