@@ -32,5 +32,11 @@ def is_dt_de_table_entry(user, de_entry):
     return is_dt(user, de_entry.table.de.stage.competition)
 
 
+@rules.predicate
+def is_manager(user, organisation):
+    return models.OrganisationMembership.objects.filter(organisation=organisation, user=user).exists()
+
+
 rules.add_perm('main.change_pool', is_referee_for_pool | is_dt_pool)
 rules.add_perm('main.change_de_table_entry', is_referee_for_de | is_dt_de_table_entry)
+rules.add_perm('main.create_competition', is_manager)
