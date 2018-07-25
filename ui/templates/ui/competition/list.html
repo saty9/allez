@@ -1,0 +1,13 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Competitions{% endblock %}
+
+{% block body %}
+    <table>
+    {% for comp in competitions %}
+        <tr><td>{{ comp.name }}</td></tr>
+    {% endfor %}
+    </table>
+{% endblock %}

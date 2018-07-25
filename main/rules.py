@@ -33,10 +33,15 @@ def is_dt_de_table_entry(user, de_entry):
 
 
 @rules.predicate
-def is_manager(user, organisation):
-    return models.OrganisationMembership.objects.filter(organisation=organisation, user=user).exists()
+def is_manager(user, test_object):
+    if test_object.__class__ == models.Organisation:
+        return models.OrganisationMembership.objects.filter(organisation=test_object, user=user).exists()
+    elif test_object.__class__ == models.Competition:
+        return models.OrganisationMembership.objects.filter(organisation=test_object.organisation, user=user).exists()
+    raise ValueError('Unexpected object: ', test_object)
 
 
 rules.add_perm('main.change_pool', is_referee_for_pool | is_dt_pool)
 rules.add_perm('main.change_de_table_entry', is_referee_for_de | is_dt_de_table_entry)
 rules.add_perm('main.create_competition', is_manager)
+rules.add_perm('main.manage_competition', is_manager)

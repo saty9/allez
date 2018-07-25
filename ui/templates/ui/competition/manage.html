@@ -1,0 +1,41 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+{# Translators: As in Manage Competition X #}
+{% block title %}{% trans 'Manage' %} {{ competition.name }}{% endblock %}
+
+{% block body %}
+    <h1>{{ competition.name }}</h1>
+    <table  class="table">
+        <tr>
+            <th></th>
+            <th></th>
+            <th>{% trans 'Stage ' %}</th>
+            <th>{% trans 'Type' %}</th>
+        </tr>
+        <tbody>
+        {% for stage in stages %}
+            <tr class="{{ stage.1 }}">
+                <td>
+                    {% if stage.0.appendable_to %}
+                        <a><i class="fas fa-plus-square"></i><i class="fas fa-level-down-alt"></i></a>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if stage.0.deletable %}
+                        <a><i class="fas fa-trash-alt"></i></a>
+                    {% endif %}
+                </td>
+                <td>{{ stage.0.number }}</td>
+                <td>{% trans stage.0.get_type_display %}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+    <h2>{% trans 'Referees' %}</h2>
+    <ul>
+    {% for referee in referees %}
+        <li>{{ referee.user.name }}</li>
+    {% endfor %}
+    </ul>
+{% endblock %}

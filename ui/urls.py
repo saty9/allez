@@ -18,5 +18,7 @@ from . import views
 
 urlpatterns = [
     path('hi', views.test),
-    path('<slug:org_slug>/competitions/create', views.create_competition, name='create_competition')
+    path('<slug:org_slug>/competitions', views.list_competitions, name='competitions'),
+    path('<slug:org_slug>/competitions/create', views.create_competition, name='create_competition'),
+    path('<slug:org_slug>/competitions/<int:comp_id>/manage', views.manage_competition, name='manage_competition'),
 ]
