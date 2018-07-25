@@ -45,5 +45,14 @@ class Stage(models.Model):
         else:
             return Stage.objects.get(competition_id=self.competition_id, number=self.number-1).ordered_competitors()
 
+    def deletable(self):
+        """returns whether a stage can be deleted or not"""
+        return self.state in [self.NOT_STARTED, self.READY]
+
+    def appendable_to(self):
+        """returns whether a stage can be added after this one"""
+        return self.state not in [self.LOCKED, self.FINISHED] or \
+            not Stage.objects.filter(competition=self.competition, number__gt=self.number)
+
     class Meta:
         unique_together = ('number', 'competition')
