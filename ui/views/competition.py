@@ -43,5 +43,7 @@ def manage_competition(request, org_slug, comp_id):
     }
     styles = list(map(lambda x: style_map.get(x.state, ''), stages_objects))
     stages = zip(stages_objects, styles)
+    types = Stage.stage_types
     return render(request, 'ui/competition/manage.html', {'competition': competition,
-                                                          'stages': stages})
+                                                          'stages': stages,
+                                                          'types': types})

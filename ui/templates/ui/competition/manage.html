@@ -5,29 +5,48 @@
 {% block title %}{% trans 'Manage' %} {{ competition.name }}{% endblock %}
 
 {% block body %}
+    <dialog id="dialog">
+        <form method="dialog">
+            <section>
+                <h3>{% trans 'Add Stage' %}</h3>
+                <label>{% trans 'type' %}</label>
+                <select id="type-select">
+                    {% for type in types %}
+                        <option value="{{ type.0 }}">{{ type.1 }}</option>
+                    {% endfor %}
+                </select>
+            </section>
+            <menu>
+                <button id="d_cancel" class="btn" onclick="dialog_cancel_press()">{% trans 'Cancel' %}</button>
+                <button id="d_submit" class="btn">{% trans 'Submit' %}</button>
+            </menu>
+        </form>
+    </dialog>
     <h1>{{ competition.name }}</h1>
     <table  class="table">
         <tr>
             <th></th>
-            <th></th>
             <th>{% trans 'Stage ' %}</th>
             <th>{% trans 'Type' %}</th>
+            <th></th>
         </tr>
         <tbody>
         {% for stage in stages %}
             <tr class="{{ stage.1 }}">
                 <td>
                     {% if stage.0.appendable_to %}
-                        <a><i class="fas fa-plus-square"></i><i class="fas fa-level-down-alt"></i></a>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if stage.0.deletable %}
-                        <a><i class="fas fa-trash-alt"></i></a>
+                        <button class="btn btn-link" onclick="add_stage_button_press({{ stage.0.number }})">
+                            <i class="fas fa-plus-square"></i><i class="fas fa-level-down-alt"></i>
+                        </button>
                     {% endif %}
                 </td>
                 <td>{{ stage.0.number }}</td>
                 <td>{% trans stage.0.get_type_display %}</td>
+                <td>
+                    {% if stage.0.deletable %}
+                        <button class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </tbody>
@@ -38,4 +57,63 @@
         <li>{{ referee.user.name }}</li>
     {% endfor %}
     </ul>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
+    <script>
+        function add_stage_button_press(number){
+            var dialog = $('#dialog')[0];
+            var submit_btn = $('#d_submit');
+
+            submit_btn.off('click');
+            submit_btn.click(function(){
+                var type = $('#type-select').val();
+                add_stage(number, type)
+            });
+
+            dialogPolyfill.registerDialog(dialog);
+            dialog.showModal();
+        }
+        function dialog_cancel_press(){
+
+        }
+        function add_stage(number, type){
+            var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+            $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+            });
+            $.ajax({
+                type:'POST',
+                url: '{% url 'main/competition_endpoint' competition.id %}',
+                data: {
+                    'type': 'add_stage',
+                    'stage_type': type,
+                    'number': number
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data['success']) {
+                        location.reload()
+                    } else {
+                        $('#main-content').prepend(
+                            '<div class="alert alert-danger" role="alert">' +
+                        'There was a problem adding a stage' +
+                        '</div>'
+                        )
+                    }
+                },
+                error: function (data) {
+                    console.log(data);
+                    $('#main-content').prepend(
+                            '<div class="alert alert-danger" role="alert">' +
+                        'There was a problem adding a stage' +
+                        '</div>'
+                        )
+                }
+            })
+
+        }
+    </script>
 {% endblock %}
