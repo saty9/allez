@@ -26,7 +26,6 @@ class Stage(models.Model):
               (LOCKED, "Finished and Confirmed"))
     type = models.CharField(max_length=3, choices=stage_types)
     state = models.CharField(max_length=3, choices=states, default=NOT_STARTED)
-    data = JSONField()
     competition = models.ForeignKey('main.Competition', on_delete=models.CASCADE)
     number = models.IntegerField()
 
