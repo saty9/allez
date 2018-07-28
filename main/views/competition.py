@@ -10,6 +10,12 @@ def competition(request, comp_id):
         r_type = request.POST['type']
         if r_type == "add_stage":
             return add_stage(request, comp)
+        elif r_type =="delete_stage":
+            return delete_stage(request, comp)
+        else:
+            out = {'success': False,
+                   'reason': 'post type not recognised'}
+            return JsonResponse(out)
 
 
 @permission_required_json('main.manage_competition', fn=direct_object)
@@ -45,3 +51,22 @@ def add_stage(request, comp):
             out = {'success': False,
                    'reason': 'Error creating stage'}
             return JsonResponse(out)
+
+
+@permission_required_json('main.manage_competition', fn=direct_object)
+def delete_stage(request, comp):
+    stage_id = request.POST['id']
+    stage = get_object_or_404(Stage, competition=comp, pk=stage_id)
+    if stage.deletable():
+        if stage.delete():
+            out = {'success': True}
+            return JsonResponse(out)
+        else:
+            out = {'success': False,
+                   'reason': 'Failed to delete stage'}
+            return JsonResponse(out)
+    else:
+        out = {'success': False,
+               'reason': 'Stage not deletable'}
+        return JsonResponse(out)
+

@@ -5,7 +5,7 @@
 {% block title %}{% trans 'Manage' %} {{ competition.name }}{% endblock %}
 
 {% block body %}
-    <dialog id="dialog">
+    <dialog id="dialog-add-stage">
         <form method="dialog">
             <section>
                 <h3>{% trans 'Add Stage' %}</h3>
@@ -44,7 +44,9 @@
                 <td>{% trans stage.0.get_type_display %}</td>
                 <td>
                     {% if stage.0.deletable %}
-                        <button class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                        <button class="btn btn-danger" onclick="delete_stage_button_press({{ stage.0.id }})">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     {% endif %}
                 </td>
             </tr>
@@ -62,7 +64,7 @@
     <script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
     <script>
         function add_stage_button_press(number){
-            var dialog = $('#dialog')[0];
+            var dialog = $('#dialog-add-stage')[0];
             var submit_btn = $('#d_submit');
 
             submit_btn.off('click');
@@ -76,6 +78,44 @@
         }
         function dialog_cancel_press(){
 
+        }
+        function delete_stage_button_press(id){
+            if (confirm('{% trans 'Delete Stage?' %}')){
+                var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+                $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+                });
+                $.ajax({
+                    type:'POST',
+                    url: '{% url 'main/competition_endpoint' competition.id %}',
+                    data: {
+                        'type': 'delete_stage',
+                        'id': id
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data['success']) {
+                            location.reload()
+                        } else {
+                            $('#main-content').prepend(
+                                '<div class="alert alert-danger" role="alert">' +
+                            'There was a problem deleting the stage' +
+                            '</div>'
+                            )
+                        }
+                    },
+                    error: function (data) {
+                        console.log(data);
+                        $('#main-content').prepend(
+                                '<div class="alert alert-danger" role="alert">' +
+                            'There was a problem deleting the stage' +
+                            '</div>'
+                            )
+                    }
+                })
+            }
         }
         function add_stage(number, type){
             var csrftoken = $("[name=csrfmiddlewaretoken]").val();
