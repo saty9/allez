@@ -8,4 +8,4 @@ class LoginUser(LoginView):
         user = form.get_user()
         if user.is_authenticated and not user.is_superuser:
             self.request.session['org_id'] = user.organisationmembership_set.order_by('last_active').first().id
-        return super(LoginView, self).form_valid(form)
+        return super(LoginUser, self).form_valid(form)
