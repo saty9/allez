@@ -53,6 +53,19 @@
         {% endfor %}
     </tbody>
     </table>
+    <h2>{% trans 'Entries' %}</h2>
+    {% if entries %}
+        <ol>
+            {% for entry in entries %}
+                <li>{{ entry.competitor.name }}</li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <form>
+            <label>Upload CSV file</label>
+            <input id="csv-upload" type="file" onchange="csv_file_selected()">
+        </form>
+    {%  endif %}
     <h2>{% trans 'Referees' %}</h2>
     <ul>
     {% for referee in referees %}
@@ -154,6 +167,38 @@
                 }
             })
 
+        }
+        function csv_file_selected() {
+            var file = $('#csv-upload')[0].files[0];
+            data = new FormData();
+            data.append('file', file);
+            data.append('type', 'entry_csv');
+
+            var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+            $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+            });
+            $.ajax({
+                url: '{% url 'main/competition_endpoint' competition.id %}',
+                type: 'POST',
+                data: data,
+                cache: false,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    if (data['success']){
+                        location.reload()
+                    } else {
+                        console.log(data)
+                    }
+                },
+                error: function(data) {
+
+                }
+            });
         }
     </script>
 {% endblock %}

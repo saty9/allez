@@ -98,7 +98,7 @@ class TestCase:
         models.PoolBout.create(pe2, pe4, 1, 5, False)
         models.PoolBout.create(pe3, pe4, 1, 5, False)
 
-        self.s4 = models.Stage.objects.create(type=models.Stage.DE, competition=self.comp, data={}, number=4)
+        self.s4 = models.Stage.objects.create(type=models.Stage.DE, competition=self.comp, number=4)
         self.de = models.DeStage.objects.create(stage=self.s4, fight_down_to=4)
         self.de.start()
 
