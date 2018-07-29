@@ -1,0 +1,51 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Edit Pool{% endblock %}
+
+{% block body %}
+    {% if user_orgs %}
+        <h2>{% trans 'Your Orgs' %}</h2>
+        <ul class="list-group">
+            {% for org in user_orgs %}
+                <li class="list-group-item">
+                    <button class="btn btn-link" onclick="change_org({{ org.organisation.id }})">
+                        {{ org.organisation.name }}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{%  endblock %}
+
+{% block scripts %}
+<script>
+    function change_org(id){
+        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url: '{% url 'ui/change_org' %}',
+            data: {
+                'org_id': id
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data['success']) {
+                    location.assign(data['next'])
+                } else {
+                    console.log(data);
+                }
+            },
+            error: function (data) {
+                console.log(data)
+            }
+        });
+    }
+</script>
+{% endblock %}
