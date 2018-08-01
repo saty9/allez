@@ -15,5 +15,5 @@ def org_or_login(request):
             return format_html('Join an Org')
     else:
         login_url = reverse('login') + '?next=' + request.path
-        return format_html('<a class="nav-link" href={}>Login <i class="fas fa-sign-in-alt"></i></a>'.format(login_url))
+        return format_html('<a class="nav-link" href="{}">Login <i class="fas fa-sign-in-alt"></i></a>'.format(login_url))
 
