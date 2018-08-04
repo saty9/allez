@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Edit Pool{% endblock %}
+{% block title %}Change Organisation{% endblock %}
 
 {% block body %}
     {% if user_orgs %}
@@ -10,19 +10,73 @@
         <ul class="list-group">
             {% for org in user_orgs %}
                 <li class="list-group-item">
-                    <button class="btn btn-link" onclick="change_org({{ org.organisation.id }})">
-                        {{ org.organisation.name }}
-                    </button>
+                    {% if org.state != org.APPLICANT %}
+                        <button class="btn btn-link" onclick="change_org({{ org.organisation.id }})">
+                            {{ org.organisation.name }}
+                        </button>
+                    {% else %}
+                        {{ org.organisation.name }} *PENDING*
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
     {% endif %}
+    <h2>{% trans 'Join an Org' %}</h2>
+    <form>
+        <select id="org-join-select">
+            {% for org in orgs %}
+                <option value="{% url 'main/organisation_endpoint' org.id %}">{{ org.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" id="join_button" class="btn btn-primary">{% trans 'Join' %}</button>
+    </form>
 {%  endblock %}
 
 {% block scripts %}
 <script>
+    $('#join_button').click(function(){
+        join_org()
+    });
+    function join_org() {
+        let target = $('#org-join-select').val();
+        send_join_org_request({{ request.user.id }}, target)
+    }
+    function send_join_org_request(user_id, target){
+        let csrftoken = $("[name=csrfmiddlewaretoken]").val();
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url: target,
+            data: {
+                'type': 'join_request',
+                'user_id': user_id,
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data['success']) {
+                    location.reload()
+                } else {
+                    var error;
+                    if (data['reason'] == "User is already a member"){
+                        error = "{% trans "You are already a member of that organisation" %}"
+                    } else {
+                        error = data['reason']
+                    }
+                    let alert = '<div class="alert alert-danger" role="alert">' + error + '</div>';
+                    $("#main-content").prepend(alert)
+                }
+            },
+            error: function (data) {
+                console.log(data)
+            }
+        });
+    }
     function change_org(id){
-        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+        let csrftoken = $("[name=csrfmiddlewaretoken]").val();
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
