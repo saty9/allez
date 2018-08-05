@@ -1,0 +1,29 @@
+{%  extends 'ui/base.html' %}
+{% load i18n %}
+{% load rules %}
+
+{% block title %}{{ org.name }}{% endblock %}
+
+{% block body %}
+    <h1>{{ org.name }}</h1>
+
+    <h2>{% trans "Members" %}</h2>
+    <ul class="list-group">
+        {% for member in full_members %}
+            <li class="list-group-item">{{ member.user.username }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if can_manage %}
+        <h2>{% trans "Applicants" %}</h2>
+        <ul class="list-group">
+            {% for applicant in applicants %}
+                <li class="list-group-item">{{ applicant.user.username }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}
