@@ -41,7 +41,11 @@
                     {% endif %}
                 </td>
                 <td>{{ stage.0.number }}</td>
-                <td>{% trans stage.0.get_type_display %}</td>
+                <td>
+                    <a href="{% url 'ui/manage_stage'  org_slug competition.id stage.0.id %}">
+                        {% trans stage.0.get_type_display %}
+                    </a>
+                </td>
                 <td>
                     {% if stage.0.deletable %}
                         <button class="btn btn-danger" onclick="delete_stage_button_press({{ stage.0.id }})">

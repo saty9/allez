@@ -48,4 +48,5 @@ def manage_competition(request, org_slug, comp_id):
     return render(request, 'ui/competition/manage.html', {'competition': competition,
                                                           'stages': stages,
                                                           'types': types,
-                                                          'entries': entries})
+                                                          'entries': entries,
+                                                          'org_slug': org_slug})
