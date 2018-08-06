@@ -45,6 +45,12 @@ def is_manager(user, test_object):
         return models.OrganisationMembership.objects.\
             filter(organisation=test_object.organisation, user=user, state=models.OrganisationMembership.MANAGER).\
             exists()
+    elif test_object.__class__ == models.Stage:
+        return models.OrganisationMembership.objects.\
+            filter(organisation=test_object.competition.organisation,
+                   user=user,
+                   state=models.OrganisationMembership.MANAGER).\
+            exists()
     raise ValueError('Unexpected object: ', test_object)
 
 
