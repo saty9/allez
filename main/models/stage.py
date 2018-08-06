@@ -3,6 +3,7 @@ from django.db import models
 from .pool_stage import PoolStage
 from .add_stage import AddStage
 from .cull_stage import CullStage
+from .de_stage import DeStage
 
 
 class Stage(models.Model):
@@ -36,6 +37,8 @@ class Stage(models.Model):
             return CullStage.objects.get(stage=self).ordered_competitors()
         elif self.type == self.ADD:
             return AddStage.objects.get(stage=self).ordered_competitors()
+        elif self.type == self.DE:
+            return DeStage.objects.get(stage=self).ordered_competitors()
 
     def input(self):
         """returns a list of entries representing the input of this stage"""
