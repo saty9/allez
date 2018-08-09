@@ -13,7 +13,7 @@
             <td>{{fencerA.name}}</td>
             <td>{{fencerA.number}}</td>
             {{#each ../entries as |fencerB childKey|}}
-                <td><div class="col-xs-1">{{{boutHelper fencerA.id fencerB.id}}}</div></td>
+                <td><div class="col-xs-1" data-x="{{@index}}" data-y="{{@../index}}">{{{boutHelper fencerA.id fencerB.id}}}</div></td>
             {{/each}}
         </tr>
     {{/each}}
