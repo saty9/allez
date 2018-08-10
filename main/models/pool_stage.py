@@ -2,7 +2,7 @@ from django.db import models
 from random import random
 from .pool_bout import PoolBout
 from .entry import Entry
-from main.utils import attempt_solve
+from main.utils.club_solver import attempt_solve
 
 
 class PoolStage(models.Model):
