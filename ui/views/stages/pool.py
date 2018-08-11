@@ -15,13 +15,12 @@ def manage_pool_stage(request, pool_stage_id):
             count = 0
             if ready_to_progress:
                 count = len(previous.ordered_competitors())
-            return render(request, 'ui/stages/NOT_STARTED/pool_manage.html', {'ready_to_progress': ready_to_progress,
+            return render(request, 'ui/stages/pool/NOT_STARTED.html', {'ready_to_progress': ready_to_progress,
                                                                               'fencer_count': count,
                                                                               'max_pool_size': MAX_POOL_SIZE,
                                                                               'stage': pool.stage})
         else:
             return HttpResponse("Pools must have an add fencers stage somewhere before them")
-        pass # TODO: Menu for selecting how many pools/ of what size
     elif state == Stage.READY:
         pass  # TODO: Menu for reorganising pools after initial generation and GO button
     elif state == Stage.STARTED:
