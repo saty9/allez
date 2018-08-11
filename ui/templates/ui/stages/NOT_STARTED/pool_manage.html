@@ -1,0 +1,213 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+
+
+{% block body %}
+    {% if fencer_count %}
+        <form id="generation_form">
+            {% trans 'Generate pools by number of pools or size of pools?' %}
+            <br>
+            <input type="radio" name="generation_method" id="number_method" value="number" onclick="generation_method_radio_change()">
+            {# Translators: as in number of pools #}
+            <label for="number_method">{% trans 'number' %}</label>
+            <br>
+            <input type="radio" name="generation_method" id="size_method" value="size" onclick="generation_method_radio_change()" checked>
+            {# Translators: as in size of pools #}
+            <label for="size_method">{% trans 'size' %}</label>
+            <br>
+            <label for="generation_number" id="generation_number_label">
+                {% trans 'Size of Pool: ' %}
+            </label>
+            <select id="generation_number">
+            </select>
+            <div id="calculation_result"></div>
+            <button type="button" class="btn btn-success" onclick="submit_form()">Generate</button>
+        </form>
+    {% else %}
+        Previous stage not completed yet
+    {% endif %}
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        let count = {{ fencer_count }};
+        let valid_sizes = Array();
+        let valid_numbers_of_pools = Array();
+        let max_pool_size = {{ max_pool_size }};
+        var method = "size";
+
+        $(document).ready( function() {
+            calculate_valid_values();
+            set_select_options(valid_sizes);
+            calculate_distribution();
+            $('#generation_number').change(calculate_distribution);
+            $('#generation_form').submit(function(e){
+                console.log(e);
+            })
+        });
+
+        function set_select_options(source_vals){
+            let gen_number_select = $("#generation_number")[0];
+            gen_number_select.options.length = 0;
+           for (var x = 0; x < source_vals.length; x++){
+               let c = document.createElement("option");
+                c.text = source_vals[x];
+                c.value = source_vals[x];
+                gen_number_select.options.add(c)
+           }
+        }
+
+        function generation_method_radio_change(){
+            if ($('#size_method')[0].checked){
+                $("#generation_number_label").html("{% trans "Size of Pool: " %}");
+                method = "size";
+                set_select_options(valid_sizes)
+            } else {
+                $("#generation_number_label").html("{% trans "Number of Pools: "%}");
+                method = "number";
+                set_select_options(valid_numbers_of_pools)
+            }
+            calculate_distribution()
+        }
+
+        function calculate_distribution() {
+            let user_num = $("#generation_number").val();
+            var num_pools_1  = 0;
+            var num_fencers_1 = 0;
+            var num_pools_2  = 0;
+            var num_fencers_2 = 0;
+            var accepted = false;
+            if (method == "size") {
+                //runs when the user has selected for distribution by number of fencers per pool
+
+                if ((count % user_num == 0) && (user_num >= 3)) {
+                    //fencers fit perfectly into the specified size of pool
+                    accepted = true;
+                    num_pools_1 = count / user_num;
+                    num_fencers_1 = user_num;
+                    num_pools_2 = 0;
+                    num_fencers_2 = 0;
+                } else if ((user_num < 3) || (user_num == 3 && count % 3 != 0)) {
+                    //that will create pools containing less than 3 people please use a different number
+                    accepted = false
+                } else if ((Math.floor(count / user_num) >= count % user_num) && (count - (user_num - (count % user_num)) * (user_num - 1)) > 0) {
+                    //when fencers will fit into pools of 2 sizes with the smaller being at least 3 fencers and only 1 less than the larger
+                    accepted = true;
+                    num_pools_1 = (count - (user_num - (count % user_num)) * (user_num - 1)) / user_num;
+                    num_fencers_1 = user_num;
+                    num_pools_2 = ((user_num - (count % user_num)) * (user_num - 1)) / (user_num - 1);
+                    num_fencers_2 = user_num - 1;
+                } else {
+                    accepted = false;
+                }
+            } else {
+                //runs when user has selected to distribute fencers by number of pools
+                if (count / user_num >= 3) {
+                    if (count % user_num == 0) {
+                        num_pools_1 = user_num;
+                        num_fencers_1 = count / user_num;
+                        num_pools_2 = 0;
+                        num_fencers_2 = 0;
+                        accepted = true;
+                    } else {
+                        accepted = true;
+                        num_pools_1 = count % user_num;
+                        num_fencers_1 = Math.floor(count / user_num) + 1;
+                        num_pools_2 = user_num - count % user_num;
+                        num_fencers_2 = Math.floor(count / user_num);
+                    }
+                } else {
+                    //that will create pools containing less than 3 people please use a smaller number"
+                }
+
+            }
+            let numOfPoules = num_pools_1 + num_pools_2;
+            //Show results of the above.
+            display_distribution(num_fencers_1, num_pools_1, num_fencers_2, num_pools_2)
+            return numOfPoules
+        }
+
+        function display_distribution(num_fencers_1, num_pools_1, num_fencers_2, num_pools_2){
+            var out = "";
+            if (num_pools_1 > 1) {
+                out = num_pools_1 + "{% trans " pools of " %}" + num_fencers_1;
+            } else {
+                out = num_pools_1 + "{% trans " pool of " %}" + num_fencers_1;
+            }
+            if (num_pools_2) {
+                if (num_pools_2 > 1){
+                    out += "{% trans " and " %}" + num_pools_2 + "{% trans " pools of " %}" + num_fencers_2;
+                } else {
+                    out += "{% trans " and " %}" + num_pools_2 + "{% trans " pools of " %}" + num_fencers_2;
+                }
+            }
+            $('#calculation_result').html(out)
+        }
+
+        function calculate_valid_values(){
+            valid_numbers_of_pools.length = 0;
+            let max_num = Math.floor(count / 3);
+            var min_num = 0;
+            if (count % max_pool_size == 0){
+                min_num = Math.max(1,Math.floor(count / max_pool_size));
+            } else {
+                min_num = Math.max(1,Math.floor(count / max_pool_size) + 1);
+            }
+
+            for (var x = min_num; x <= max_num; x++){
+                valid_numbers_of_pools.push(x)
+            }
+
+            valid_sizes.length = 0;
+            if (count % 3 == 0){
+                valid_sizes.push(3)
+            }
+            for (x = 4; x <= 15; x++){
+                if (((Math.floor(count / x) >= count % x) && (count - (x - (count % x)) * (x - 1)) > 0) || (count % x == 0)){
+                    valid_sizes.push(x);
+                }
+            }
+        }
+
+        function submit_form(){
+            let success = function(data){
+                location.reload();
+            };
+            let data = {
+                    'type': 'generate_pools',
+                    'number_of_pools': calculate_distribution()
+            };
+            api_post('{% url 'main/stage_endpoint' stage.id %}', data, success);
+            {% comment %}var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            });
+            $.ajax({
+                type:'POST',
+                url: '{% url 'main/stage_endpoint' stage.id %}',
+                data: {
+                    'type': 'generate_pools',
+                    'method': method,
+                    'number': $("#generation_number").val(),
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data['success']) {
+                    } else {
+                        console.log(data);
+                    }
+                },
+                error: function (data) {
+
+                }
+            });{% endcomment %}
+        }
+
+    </script>
+{% endblock %}

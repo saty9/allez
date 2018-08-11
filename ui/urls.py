@@ -23,4 +23,5 @@ urlpatterns = [
     path('<slug:org_slug>/competitions', views.list_competitions, name='ui/org/competitions'),
     path('<slug:org_slug>/competitions/create', views.create_competition, name='ui/create_competition'),
     path('<slug:org_slug>/competitions/<int:comp_id>/manage', views.manage_competition, name='ui/manage_competition'),
+    path('<slug:org_slug>/competitions/<int:comp_id>/manage/<int:stage_id>', views.manage_stage_router, name='ui/manage_stage')
 ]
