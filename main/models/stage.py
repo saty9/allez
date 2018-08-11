@@ -56,5 +56,20 @@ class Stage(models.Model):
         return self.state not in [self.LOCKED, self.FINISHED] or \
             not Stage.objects.filter(competition=self.competition, number__gt=self.number)
 
+    def save(self, *args, **kwargs):
+        creating = False
+        if not self.pk:
+            creating = True
+        super(Stage, self).save(*args, **kwargs)
+        if creating:
+            if self.type == Stage.POOL:
+                self.poolstage_set.create()
+            elif self.type == Stage.DE:
+                self.destage_set.create()
+            elif self.type == Stage.ADD:
+                self.addstage_set.create()
+            elif self.type == Stage.CULL:
+                self.cullstage_set.create()
+
     class Meta:
         unique_together = ('number', 'competition')
