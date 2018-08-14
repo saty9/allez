@@ -21,7 +21,8 @@ class Pool(models.Model):
         return victories == expected
 
     def percent_complete(self):
-        max_bouts = factorial(self.poolentry_set.count() - 1) * 2
+        entry_count = self.poolentry_set.count()
+        max_bouts = ((self.poolentry_set.count() - 1) * entry_count)
         current_bouts = PoolBout.objects.filter(fencerA__in=self.poolentry_set.all()).count()
         return floor((current_bouts/max_bouts) * 100)
 
