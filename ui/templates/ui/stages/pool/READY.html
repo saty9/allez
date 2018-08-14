@@ -1,0 +1,59 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+
+
+{% block body %}
+    <div class="container-fluid">
+        <div class="row">
+            {% for pool in pools %}
+                <div class="list-group col-md-3">
+                    <div class="list-group-item list-group-item-dark">{% trans 'Pool'%} {{ forloop.counter }}</div>
+                    <div id="pool-{{ pool.id }}" class="sortable">
+                        {% for p_entry in pool.poolentry_set.all %}
+                            <div id="{{ p_entry.entry.id }}" class="list-group-item">{{ p_entry.entry.competitor.club.name }}-{{ p_entry.entry.competitor.name }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <p></p>
+            {% endfor %}
+        </div>
+    <br>
+        <div class="col text-center">
+            <button type="button" class="btn btn-success" onclick="submit()">{% trans "Confirm" %}</button>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        var distribution_changed = false;
+          $(document).ready( function() {
+              $(".sortable").sortable({
+                  connectWith: ".sortable",
+                  change: function( event, ui ) { distribution_changed = true }
+              }).disableSelection();
+          });
+
+          function submit(){
+              var data = {};
+              if (distribution_changed) {
+                  let pool_lists = $(".sortable");
+                  var pools = {};
+                  for (var x = 0; x < pool_lists.length; x++) {
+                      pools[x.toString()] = $(pool_lists[x]).sortable("toArray");
+                  }
+                  data = {"type": "confirm_pools",
+                          "pools": JSON.stringify(pools)};
+                  console.log(pools)
+              } else {
+                  data = {"type": "confirm_pools"};
+              }
+              api_post("{% url 'main/stage_endpoint' stage_id %}", data, function() {location.reload()})
+          }
+
+    </script>
+{% endblock %}

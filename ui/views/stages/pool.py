@@ -16,13 +16,15 @@ def manage_pool_stage(request, pool_stage_id):
             if ready_to_progress:
                 count = len(previous.ordered_competitors())
             return render(request, 'ui/stages/pool/NOT_STARTED.html', {'ready_to_progress': ready_to_progress,
-                                                                              'fencer_count': count,
-                                                                              'max_pool_size': MAX_POOL_SIZE,
-                                                                              'stage': pool.stage})
+                                                                       'fencer_count': count,
+                                                                       'max_pool_size': MAX_POOL_SIZE,
+                                                                       'stage': pool.stage})
         else:
             return HttpResponse("Pools must have an add fencers stage somewhere before them")
     elif state == Stage.READY:
-        pass  # TODO: Menu for reorganising pools after initial generation and GO button
+        pools = pool.pool_set.all()
+        return render(request, 'ui/stages/pool/READY.html', {'pools': pools,
+                                                             'stage_id': pool.stage.id})
     elif state == Stage.STARTED:
         pass  # TODO: some variant on pool_edit.html
     # TODO this should load a different template depending on the stages state with one for generating tables another for rearanging and confirming and another for adding results
