@@ -27,7 +27,7 @@ function api_post(target, data, success, failure, error){
                 if (failure){
                     failure(data)
                 } else {
-                    $('#alerts').append('<div class="alert alert-failure">' + data['verbose_reason'] + '</div>')
+                    $('#alerts').append('<div class="alert alert-danger">' + data['verbose_reason'] + '</div>')
                 }
             }},
         error: function (data) {
