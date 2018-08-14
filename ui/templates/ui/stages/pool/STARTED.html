@@ -1,0 +1,48 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+
+
+{% block body %}
+    <h2>{{ stage.competition.name }} - {% trans "Stage" %} {{ stage.number }}</h2>
+
+    <table class="table">
+        <thead>
+            <th>#</th>
+            <th>{% trans "Status" %}</th>
+            <th>{% trans "Progress" %}</th>
+            <th></th>
+        </thead>
+        <tbody>
+            {% for pool in pools %}
+                <tr>
+                    <td>{% trans 'Pool'%} {{ pool.number }}</td>
+                    <td>
+                        {% if pool.complete %}
+                            <div class="badge badge-pill badge-success">{% trans "Complete" %}</div>
+                        {% else %}
+                            <div class="badge badge-pill badge-warning">{% trans "In Progress" %}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ pool.percent_complete }}%</td>
+                    <td><a href="{% url 'ui/dt_manage_pool' pool.id %}">{% trans "Manage" %}</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if all_completed %}
+        <div class="col text-center">
+            <button type="button" class="btn btn-success" onclick="submit()">{% trans "Confirm" %}</button>
+        </div>
+    {% endif %}
+
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+    </script>
+{% endblock %}

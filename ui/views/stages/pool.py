@@ -26,8 +26,11 @@ def manage_pool_stage(request, pool_stage_id):
         return render(request, 'ui/stages/pool/READY.html', {'pools': pools,
                                                              'stage_id': pool.stage.id})
     elif state == Stage.STARTED:
-        pass  # TODO: some variant on pool_edit.html
-    # TODO this should load a different template depending on the stages state with one for generating tables another for rearanging and confirming and another for adding results
+        pools = pool.pool_set.all()
+        all_completed = all(map(lambda x: x.complete(), pools))
+        return render(request, 'ui/stages/pool/STARTED.html', {'stage': pool.stage,
+                                                               'pools': pools,
+                                                               'all_completed': all_completed})
 
 
 def dt_manage_pool(request, pool_id):
