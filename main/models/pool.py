@@ -1,4 +1,6 @@
 from django.db import models
+from math import factorial, floor
+from .pool_bout import PoolBout
 
 
 class Pool(models.Model):
@@ -17,6 +19,11 @@ class Pool(models.Model):
             expected += add
             add += 1
         return victories == expected
+
+    def percent_complete(self):
+        max_bouts = factorial(self.poolentry_set.count() - 1) * 2
+        current_bouts = PoolBout.objects.filter(fencerA__in=self.poolentry_set.all()).count()
+        return floor((current_bouts/max_bouts) * 100)
 
     def bout_order(self):
         """returns a string indicating order fencers should fight each other"""
