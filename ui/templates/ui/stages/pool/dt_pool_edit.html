@@ -1,0 +1,297 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Edit Pool{% endblock %}
+
+{% block styles %}<style>
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    @keyframes error-blink{
+        from {background-color: rgba(255, 89, 81,255)
+        }
+        to {background-color: rgba(255,89,81,0)}
+    }
+    .blink-error {
+
+        animation-name: error-blink;
+        animation-timing-function: ease;
+        animation-duration: 1s;
+    }
+    .form-control{
+        min-width: 45px;
+    }
+    table{
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @media (min-width: 450px){
+        .winner {
+            background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+        .loser {
+            background: url({% static 'ui/images/D.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+    }
+    @media (max-width: 450px){
+        .winner {
+            color: green;
+        }
+        .loser {
+            color: red;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <dialog id="get_winner_dialog">
+        <form method="dialog">
+            <section>
+                <p>{% trans 'Who Won?' noop %}</p>
+            </section>
+            <menu>
+                <button id="d_opt_1"></button>
+                <button id="d_opt_2"></button>
+            </menu>
+        </form>
+    </dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
+<script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
+<script src="{% static 'ui/templates/pool.js' %}"></script>
+<script>
+    var results;
+    var entries;
+    function runTemplate(){
+        $.ajax({
+            type:'GET',
+            url: '{% url 'main/pool_endpoint'  pool_id %}',
+            success: function (pool_data) {
+                console.log(pool_data);
+                entries = pool_data.entries;
+                entries.sort(function(a,b){
+                   return a.number > b.number;
+                });
+                Handlebars.registerHelper('boutHelper', function(a_id, b_id){
+                    console.log('HI');
+                    if (a_id == b_id){
+                        return 'X'
+                    }
+                    return new Handlebars.SafeString('<input type="number" class="form-control" id="'+ a_id+'-'+ b_id +'" min="0">');
+                });
+                $('#main-content').append(Handlebars.templates.pool(pool_data));
+                $('input[type="number"]').blur(function() {
+                    var ids = this.id.split('-');
+                    result_added(parseInt(ids[0]), parseInt(ids[1]));
+                });
+                $('input[type="number"]').keydown(function (event){
+                    if (event.keyCode === 13){
+                        if (event.target.readOnly){
+                            $(event.target).dblclick();
+                        } else {
+                            event.target.blur();
+                        }
+                    } else {
+                        var x = event.target.parentNode.dataset.x;
+                        var y = event.target.parentNode.dataset.y;
+                        let max_ind = entries.length - 1;
+                        if (event.keyCode == 37){ //left
+                           x--;
+                           if (x<0 || (x==0 && y==0)){
+                               x = max_ind;
+                               y--;
+                           }
+                           if (y<0){
+                               y = max_ind
+                           }
+                           if (x == y){
+                               x--;
+                           }
+                           $('div[data-x="' + x + '"][data-y="' + y + '"] > input').focus()
+                        } else if (event.keyCode == 38){ //up
+                            y--;
+                            if (x == y){
+                                y--;
+                            }
+                            $('div[data-x="' + x + '"][data-y="' + y + '"] > input').focus();
+                            event.preventDefault();
+                        } else if (event.keyCode == 39) { //right
+                            x++;
+                           if (x>max_ind || (x==max_ind && y==max_ind)){
+                               x = 0;
+                               y++;
+                           }
+                           if (y>max_ind){
+                               y = 0
+                           }
+                           if (x == y){
+                               x++;
+                           }
+                           $('div[data-x="' + x + '"][data-y="' + y + '"] > input').focus()
+                        } else if (event.keyCode == 40) { //down
+                            y++;
+                            if (x == y){
+                                y++;
+                            }
+                            $('div[data-x="' + x + '"][data-y="' + y + '"] > input').focus();
+                            event.preventDefault();
+                        }
+                        //TODO alert saying double click or press enter to edit submitted result
+                    }
+                });
+                for (var x = 0; x < pool_data.bouts.length; x++){
+                    var bout = pool_data.bouts[x];
+                    set_box_result(bout.fencerA_id, bout.fencerB_id, bout.scoreA, bout.victoryA)
+                }
+            },
+            error: function (data) {
+                console.log(data);
+                window.setTimeout(runTemplate(),1000);
+            }
+        });
+        
+    }
+
+    $(window).bind("load", function() {
+        runTemplate();
+    });
+
+    function set_box_result(id_1, id_2, score, victory){
+        var box = $('#' + id_1 + '-' + id_2);
+        box.prop('readonly', true);
+        box.unbind('blur');
+        box.show();
+        box.val(score);
+        box.on('dblclick touchend',function(){
+            box.unbind('dblclick');
+            box.unbind('touchend');
+            box.prop('readonly', false);
+            var blur = function(){
+                result_added(id_1, id_2)
+            };
+            box.blur(blur);
+            box.removeClass('winner');
+            box.removeClass('loser');
+        });
+        if (victory){
+            box.addClass('winner');
+        } else {
+            box.addClass('loser')
+        }
+    }
+
+    function result_added(e1, e2) {
+        var box1_id = '#' + e1 + '-' + e2;
+        var box2_id = '#' + e2 + '-' + e1;
+        var e1_box = $(box1_id);
+        var e2_box = $(box2_id);
+         if($.trim(e1_box.val()).length && $.trim(e2_box.val()).length) { // zero-length string AFTER a trim
+             e1_score = parseInt(e1_box.val());
+             e2_score = parseInt(e2_box.val());
+             e1_box.parent().progressbar({value: false});
+             e2_box.parent().progressbar({value: false});
+             e1_box.hide();
+             e2_box.hide();
+
+            if(e1_score != e2_score){
+                send_result(e1,e2, e1_score > e2_score,e1_score, e2_score)
+            } else {
+                var button1 = $('#d_opt_1');
+                var button2 = $('#d_opt_2');
+                var dialog = $('#get_winner_dialog')[0];
+
+                button1.off('click');
+                button1.click(function(){
+                   send_result(e1,e2,true,e1_score,e2_score)
+                });
+                button1.html(e1_box.get(0).closest('tr').children[0].innerHTML);
+
+                button2.off('click');
+                button2.click(function(){
+                   send_result(e1,e2,false,e1_score,e2_score)
+                });
+                button2.html(e2_box.get(0).closest('tr').children[0].innerHTML);
+                dialogPolyfill.registerDialog(dialog);
+                dialog.showModal();
+            }
+        }
+    }
+    var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+    function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    function send_result(id_1, id_2, v_1, s_1, s_2) {
+        var e1_box = $('#' + id_1 + '-' + id_2);
+        var e2_box = $('#' + id_2 + '-' + id_1);
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url: '{% url 'main/pool_endpoint' pool_id %}',
+            data: {
+                'type': 'bout_result',
+                'entry_1': id_1,
+                'entry_2': id_2,
+                'e1_victory': (v_1) ? 1 : 0,
+                'e1_score': s_1,
+                'e2_score': s_2,
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data['success']) {
+                    set_box_result(id_1, id_2, s_1, v_1);
+                    set_box_result(id_2, id_1, s_2, !v_1);
+                    e1_box.parent().progressbar('destroy');
+                    e2_box.parent().progressbar('destroy');
+                } else {
+                    console.log(data);
+                }
+            },
+            error: function (data) {
+                if (data.responseJSON){
+                    console.log(data.responseJSON);
+                } else{
+                    console.log(data);
+                }
+                e1_box.parent().progressbar('destroy');
+                e2_box.parent().progressbar('destroy');
+                e1_box.show();
+                e2_box.show();
+                if (data.responseJSON.reason == "NotLoggedIn"){
+                    $('#main-content').prepend('<div class="alert alert-danger" role="alert">' +
+                        'Please <a class="alert-link" href="{% url 'login' %}?next='+ window.location.pathname + '">LOGIN</a> to update or add results' +
+                        '</div>');
+                    e1_box.addClass('blink-error');
+                    e2_box.addClass('blink-error');
+
+                } else {
+                    console.log(data.responseJSON);
+                }
+
+            }
+        });
+    };
+
+    $(':input[type=number]').on('mousewheel', function(e){
+        e.preventDefault();
+    });
+</script>
+{% endblock %}
