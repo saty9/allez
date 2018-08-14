@@ -10,6 +10,10 @@ class PoolStage(models.Model):
     carry_previous_results = models.BooleanField(default=False)
 
     def ordered_competitors(self):
+        from .stage import Stage
+        if self.stage.state in [Stage.READY, Stage.NOT_STARTED] or \
+                any(map(lambda x: not x.complete(), self.pool_set.all())):
+            raise Stage.NotCompleteError("Stage not finished yet")
         results = self.results()
         results.sort(reverse=True)
         return list(map(lambda x: x.entry, results))
@@ -128,3 +132,4 @@ class PoolStage(models.Model):
 
         def ind(self):
             return self.TS - self.TR
+

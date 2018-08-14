@@ -12,6 +12,9 @@ class AddStage(models.Model):
     run = models.BooleanField(default=False)
 
     def ordered_competitors(self):
+        from .stage import Stage
+        if self.stage.state in [Stage.READY, Stage.NOT_STARTED]:
+            raise Stage.NotCompleteError("Stage not finished yet")
         input_entries = self.stage.input()
         additions = [addition.entry
                      for addition in self.addcompetitor_set.order_by('sequence')
