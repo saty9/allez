@@ -1,7 +1,7 @@
 from main.models import Stage
 from django.shortcuts import get_object_or_404
-from .stage_pool import pools, pools_pdf, results, results_pdf
-from .manage_pool_stage import manage_pool_stage
+from .stage_pool import pools_pdf, results, results_pdf
+from .stage_management import manage_pool_stage
 
 
 def stage_router(request, stage_id):

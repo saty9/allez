@@ -83,5 +83,3 @@ def confirm_pools(request, stage):
     else:
         return api_failure("incorrect state",
                            _("Stage not in ready state"))
-
-    pass
