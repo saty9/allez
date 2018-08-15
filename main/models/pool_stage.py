@@ -1,5 +1,5 @@
 from django.db import models
-from random import random
+from random import getrandbits
 from .pool_bout import PoolBout
 from .entry import Entry
 from main.utils.club_solver import attempt_solve
@@ -119,7 +119,7 @@ class PoolStage(models.Model):
             elif self.TS != other.TS:
                 return self.TS < other.TS
             else:
-                return bool(random.getrandbits(1))
+                return bool(getrandbits(1))
 
         def __str__(self):
             return "V:{:.03}, Ind:{}, TS:{}".format(self.win_percentage, self.ind(), self.TS)
