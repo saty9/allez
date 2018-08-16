@@ -10,6 +10,10 @@ class PoolStage(models.Model):
     carry_previous_results = models.BooleanField(default=False)
 
     def ordered_competitors(self):
+        """
+        :return: ordered list of entries
+        :rtype: list of Entry
+        """
         from .stage import Stage
         if self.stage.state in [Stage.READY, Stage.NOT_STARTED] or \
                 any(map(lambda x: not x.complete(), self.pool_set.all())):
@@ -19,6 +23,11 @@ class PoolStage(models.Model):
         return list(map(lambda x: x.entry, results))
 
     def start(self, number_of_pools):
+        """Generate the given number of pools and add entries to them
+
+        :param int number_of_pools: number of pools to generate
+        :return: None
+        """
         fencers = self.stage.input()
         pools = [[] for _ in range(number_of_pools)]
 
@@ -47,9 +56,14 @@ class PoolStage(models.Model):
                 db_pool.poolentry_set.create(entry=entry, number=pool_pos + 1)
 
     def results(self):
-        """returns an unordered list of PoolStage.Fencer's
-        if carry_previous_results is True then it will merge in results from the last round of pools
-        if a fencer was in the last set of results but is not in the new one they are dropped from the results
+        """Get the results for each entry from this stages pools.
+
+        If carry_previous_results is True then it will merge in results from the last round of pools
+
+        If a fencer was in the last set of results but is not in the new one they are dropped from the results
+
+        :return: an unordered list of PoolStage.Fencer's
+        :rtype: list of Fencer
         """
         fencers = []
         for index, p in enumerate(self.pool_set.all()):
@@ -85,6 +99,7 @@ class PoolStage(models.Model):
         return fencers
 
     class Fencer:
+        """Represents a fencers results from a pool stage"""
         bouts = 0
         V = 0
         TS = 0
@@ -93,6 +108,12 @@ class PoolStage(models.Model):
         entry = 0
 
         def __init__(self, bouts, v, ts, tr, entry):
+            """
+            :param bouts: number of bouts these results are from
+            :param v: number of victories
+            :param ts: number of hits scored
+            :param tr: number of hits received
+            :param entry: entry id"""
             self.bouts = bouts
             self.V = v
             self.TS = ts
@@ -131,5 +152,6 @@ class PoolStage(models.Model):
                 "FENCER OBJECT WITH ERROR"
 
         def ind(self):
+            """get indicator for results"""
             return self.TS - self.TR
 
