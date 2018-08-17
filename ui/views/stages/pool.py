@@ -31,6 +31,10 @@ def manage_pool_stage(request, pool_stage_id):
         return render(request, 'ui/stages/pool/STARTED.html', {'stage': pool.stage,
                                                                'pools': pools,
                                                                'all_completed': all_completed})
+    else:
+        pools = pool.pool_set.all().order_by('number')
+        return render(request, 'ui/stages/pool/FINISHED.html', {'stage': pool.stage,
+                                                                'pools': pools})
 
 
 def dt_manage_pool(request, pool_id):

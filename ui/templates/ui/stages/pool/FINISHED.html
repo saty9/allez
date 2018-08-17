@@ -1,0 +1,108 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Pool Stage{% endblock %}
+
+{% block styles %}<style>
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    .form-control{
+        min-width: 45px;
+    }
+    table{
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @media (min-width: 540px){
+        .winner {
+            background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+        .loser {
+            background: url({% static 'ui/images/D.svg' %}) no-repeat scroll 7px 9px;
+            padding-left:30px;
+        }
+    }
+    @media (max-width: 540px){
+        .winner {
+            color: green;
+        }
+        .loser {
+            color: red;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <h2>{% trans 'Pool Stage' %}: {{ stage.number }}</h2>
+    <div class="container">
+        {% for pool in pools %}
+            <div>
+                <h3>{% trans 'Pool' %} {{ pool.number }}</h3>
+                <div class="pool" data-source="{% url 'main/pool_endpoint'  pool.id %}" data-pool_id="{{ pool.id }}"></div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
+<script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
+<script src="{% static 'ui/templates/pool.js' %}"></script>
+<script>
+    function runTemplate(){
+        let pool_divs = $('.pool');
+        for (var y = 0; y < pool_divs.length; y++){
+            let current = pool_divs[y];
+            let pool_id = current.dataset.pool_id;
+            $.ajax({
+                type:'GET',
+                url: current.dataset.source,
+                success: function (pool_data) {
+                    console.log(pool_data);
+                    entries = pool_data.entries;
+                    entries.sort(function(a,b){
+                       return a.number > b.number;
+                    });
+                    Handlebars.registerHelper('boutHelper', function(a_id, b_id){
+                        if (a_id == b_id){
+                            return 'X'
+                        }
+                        return new Handlebars.SafeString('<input type="number" class="form-control" id="' +
+                            pool_id + '-'+ a_id+'-'+ b_id +'" readonly="true">');
+                    });
+                    $(current).append(Handlebars.templates.pool(pool_data));
+                    for (var x = 0; x < pool_data.bouts.length; x++){
+                        var bout = pool_data.bouts[x];
+                        var box = $('#' + pool_id + '-' + bout.fencerA_id + '-' + bout.fencerB_id);
+                        box.val(bout.scoreA);
+                        if (bout.victoryA){
+                            box.addClass('winner');
+                        } else {
+                            box.addClass('loser');
+                        }
+                    }
+                },
+                error: function (data) {
+                    console.log(data);
+                    window.setTimeout(runTemplate(),1000);
+                }
+            });
+        }
+        
+    }
+
+    $(window).bind("load", function() {
+        runTemplate();
+    });
+</script>
+{% endblock %}
