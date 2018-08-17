@@ -1,0 +1,41 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Cull Stage' %}{% endblock %}
+
+
+{% block body %}
+    {% if fencer_count %}
+        <form id="generation_form">
+            {% trans 'Configure Cull' %}
+            <br>
+            {% trans "Current number of entries" %}: {{ fencer_count }}
+            <br>
+            <label for="cull_number" id="cull_number_label">
+                {% trans 'Lowest rank to continue: ' %}
+            </label>
+            <input id="cull_number" type="number" max="{{ fencer_count }}" min="2" value="{{ default_cull }}">
+            <button type="button" class="btn btn-success" onclick="submit_form()">{% trans "Submit" %}</button>
+        </form>
+    {% else %}
+        {% trans "Previous stage not completed yet" %}
+    {% endif %}
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        function submit_form(){
+            let success = function(data){
+                location.reload();
+            };
+            let data = {
+                    'type': 'set_cull_level',
+                    'cull_number': $('#cull_number').val()
+            };
+            api_post('{% url 'main/stage_endpoint' stage.id %}', data, success);
+        }
+
+    </script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{%  extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Cull Stage' %}{% endblock %}
+
+{% block styles %}
+    <style>
+        .list-group {
+            display:inline-block; /* You can use inline also */
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <h2>{% trans 'Cull Complete' %}</h2>
+    <br>
+    <ul class="list-group">
+        {% for e in survivors %}
+            <div class="list-group-item list-group-item-success">{{ e.competitor.club.name }}-{{ e.competitor.name }}</div>
+        {% endfor %}
+        {% for e in culled %}
+            <div class="list-group-item list-group-item-danger">{{ e.competitor.club.name }}-{{ e.competitor.name }}</div>
+        {% endfor %}
+    </ul>
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        function submit_form(){
+            let success = function(data){
+                location.reload();
+            };
+            let data = {
+                    'type': 'confirm_cull'
+            };
+            api_post('{% url 'main/stage_endpoint' stage.id %}', data, success);
+        }
+
+    </script>
+{% endblock %}
