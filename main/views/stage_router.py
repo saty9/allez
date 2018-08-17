@@ -1,13 +1,15 @@
 from main.models import Stage
 from django.shortcuts import get_object_or_404
 from .stage_pool import pools_pdf, results, results_pdf
-from .stage_management import manage_pool_stage
+from .stage_management import manage_pool_stage, manage_cull_stage
 
 
 def stage_router(request, stage_id):
     stage = get_object_or_404(Stage, pk=stage_id)
     if stage.type == Stage.POOL:
         return manage_pool_stage(request, stage)
+    elif stage.type == Stage.CULL:
+        return manage_cull_stage(request, stage)
 
 
 def stage_router_pdf(request, comp_id, stage_number):
