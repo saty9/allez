@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from main.helpers.permissions import permission_required_json, direct_object
 from main.models import Pool, Stage, PoolBout
-import logging
+from main.utils.api_responses import api_failure
 
 
 def pool(request, pool_id):
@@ -21,7 +21,7 @@ def pool(request, pool_id):
 def update_pool(request, pool):
     """handles POST requests to update pools"""
     if pool.stage.stage.state != Stage.STARTED:
-        return JsonResponse({'success': False, 'reason': 'Stage not currently running'})
+        return JsonResponse({'success': False, 'reason': 'stage not currently running'})
     else:
         r_type = request.POST['type']
         if r_type == 'bout_result':
@@ -31,13 +31,11 @@ def update_pool(request, pool):
             e1_score = int(request.POST['e1_score'])
             e2_score = int(request.POST['e2_score'])
             if (e1_victory and e2_score > e1_score) or (not e1_victory and e2_score < e1_score):
-                return JsonResponse({'success': False, 'reason': 'Bad Input (score victory mismatch)'})
+                return api_failure('score victory mismatch')
             e1.fencerA_bout_set.update_or_create(fencerB=e2, defaults={'scoreA': e1_score,
                                                                        'victoryA': e1_victory})
             e2.fencerA_bout_set.update_or_create(fencerB=e1, defaults={'scoreA': e2_score,
                                                                        'victoryA': not e1_victory})
             return JsonResponse({'success': True, 'pool_complete': pool.complete()})
-    logger = logging.getLogger(__name__)
-    logger.error("Couldn't parse POST:{} to {}".format(request.POST, request.path))
-    return JsonResponse({'success': False, 'reason': 'Unable to understand post'})
+    return JsonResponse({'success': False, 'reason': 'unable to understand post'})
 

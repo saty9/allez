@@ -3,6 +3,14 @@ from django.test import TestCase
 from main.models import Stage, PoolStage, Competition, Pool
 
 
+def make_boring_results(pool):
+    entries = pool.poolentry_set.all()
+    for avoid_index, fencer_a in enumerate(entries):
+        for fencer_b in entries[avoid_index + 1:]:
+            fencer_a.fencerA_bout_set.create(fencerB=fencer_b, scoreA=5, victoryA=True)
+            fencer_b.fencerA_bout_set.create(fencerB=fencer_a, scoreA=0, victoryA=False)
+
+
 class TestPoolStage(TestCase):
 
     def setUp(self):
@@ -71,21 +79,13 @@ class TestPoolStage(TestCase):
                 got_lt = True
         self.assertTrue(got_lt and got_gte, "random fallback")
 
-    @staticmethod
-    def make_boring_results(pool):
-        entries = pool.poolentry_set.all()
-        for avoid_index, fencer_a in enumerate(entries):
-            for fencer_b in entries[avoid_index + 1:]:
-                fencer_a.fencerA_bout_set.create(fencerB=fencer_b, scoreA=5, victoryA=True)
-                fencer_b.fencerA_bout_set.create(fencerB=fencer_a, scoreA=0, victoryA=False)
-
     def test_function_results(self):
         competition = PreAddedCompetitionOfSize(entries__num_of_entries=3)  # type: Competition
         stage = competition.stage_set.create(type=Stage.POOL, number=1)
         pool_stage = stage.poolstage_set.first()  # type: PoolStage
         pool_stage.start(1)
         pool = pool_stage.pool_set.first()
-        self.make_boring_results(pool)
+        make_boring_results(pool)
         results = pool_stage.results()
         self.assertEqual(2, results[0].V)
         self.assertEqual(10, results[0].ind())
@@ -96,7 +96,7 @@ class TestPoolStage(TestCase):
         pool_stage = stage.poolstage_set.first()  # type: PoolStage
         pool_stage.start(1)
         pool = pool_stage.pool_set.first()
-        self.make_boring_results(pool)
+        make_boring_results(pool)
         stage.state = Stage.FINISHED
         stage.save()
         stage = competition.stage_set.create(type=Stage.POOL, number=2)
@@ -105,7 +105,7 @@ class TestPoolStage(TestCase):
         pool_stage.carry_previous_results = True
         pool_stage.save()
         pool = pool_stage.pool_set.first()
-        self.make_boring_results(pool)
+        make_boring_results(pool)
         results = pool_stage.results()
         self.assertEqual(4, results[0].V)
         self.assertEqual(20, results[0].ind())
