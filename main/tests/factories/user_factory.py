@@ -6,7 +6,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
 
-    username = factory.Faker('username')
+    username = factory.Faker('email')
     password = factory.Faker('sha256')
 
 
