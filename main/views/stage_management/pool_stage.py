@@ -14,6 +14,8 @@ def manage_pool_stage(request, stage):
             return generate_pools(request, stage)
         elif r_type == "confirm_pools":
             return confirm_pools(request, stage)
+        elif r_type == 'finish_stage':
+            return finish_stage(request,stage)
         else:
             return api_failure('unrecognised request')
 
@@ -83,3 +85,18 @@ def confirm_pools(request, stage):
     else:
         return api_failure("incorrect state",
                            _("Stage not in ready state"))
+
+
+@permission_required_json('main.manage_competition', fn=direct_object)
+def finish_stage(request, stage):
+    pool_stage = stage.poolstage_set.first()
+    if stage.state == Stage.STARTED:
+        if all(map(lambda x: x.complete(), pool_stage.pool_set.all())):
+            stage.state = Stage.FINISHED
+            stage.save()
+            return api_success()
+        else:
+            return api_failure('stage not finished')
+    else:
+        return api_failure("incorrect state",
+                           "stage not currently running")
