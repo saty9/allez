@@ -33,7 +33,7 @@ def generate_pools(request, stage):
                 return api_success()
             else:
                 return api_failure("invalid pool size",
-                                   _('produces pools with less than 3 or more than ') + MAX_POOL_SIZE + _(' fencers'))
+                                   _('produces pools with less than 3 or more than ') + str(MAX_POOL_SIZE) + _(' fencers'))
         else:
             return api_failure('previous stage not completed yet')
     else:
