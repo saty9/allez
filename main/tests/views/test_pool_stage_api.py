@@ -8,6 +8,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from main.models import Stage
 from main.settings import MAX_POOL_SIZE
+from ..models.test_pool_stage import make_boring_results
 
 
 class TestPoolStageAPI(TestCase):
@@ -237,3 +238,40 @@ class TestPoolStageAPI(TestCase):
         self.assertJSONEqual(out.content, {'success': False,
                                            'reason': 'unrecognised request',
                                            'verbose_reason': 'unrecognised request'})
+
+    def test_finish_stage_base(self):
+        self.c.force_login(self.manager)
+        self.pool_stage.start(3)
+        self.stage.state = Stage.STARTED
+        self.stage.save()
+        for pool in self.pool_stage.pool_set.all():
+            make_boring_results(pool)
+        out = self.c.post(self.target, {'type': 'finish_stage'})
+        self.assertJSONEqual(out.content, {'success': True})
+        self.stage.refresh_from_db()
+        self.assertEqual(self.stage.state, Stage.FINISHED)
+
+    def test_finish_stage_not_complete(self):
+        self.c.force_login(self.manager)
+        self.pool_stage.start(3)
+        self.stage.state = Stage.STARTED
+        self.stage.save()
+        out = self.c.post(self.target, {'type': 'finish_stage'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'stage not finished',
+                                           'verbose_reason': 'stage not finished'})
+        self.stage.refresh_from_db()
+        self.assertEqual(self.stage.state, Stage.STARTED)
+
+    def test_finish_stage_bad_state(self):
+        self.c.force_login(self.manager)
+        self.pool_stage.start(3)
+        for state in [Stage.NOT_STARTED, Stage.READY, Stage.FINISHED, Stage.LOCKED]:
+            self.stage.state = state
+            self.stage.save()
+            out = self.c.post(self.target, {'type': 'finish_stage'})
+            self.assertJSONEqual(out.content, {'success': False,
+                                               'reason': 'incorrect state',
+                                               'verbose_reason': 'stage not currently running'})
+            self.stage.refresh_from_db()
+            self.assertEqual(self.stage.state, state)
