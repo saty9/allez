@@ -11,7 +11,11 @@ class DeTable(models.Model):
             # TODO confirm that this is safe if there are multiple DE's (and therefore seeds) in a single competition
             return list(self.detableentry_set.filter(entry__isnull=False).order_by('entry__deseed__seed').all())
         elif self.detableentry_set.count() == 2:
-            return list(self.detableentry_set.filter(entry__isnull=False).order_by('-victory').all())
+            x = self.detableentry_set.first()
+            if x.victory or x.against().victory:
+                return list(self.detableentry_set.filter(entry__isnull=False).order_by('-victory').all())
+            else:
+                raise UnfinishedTableException('not all fights complete')
         else:
             if not self.children.exists():
                 raise UnfinishedTableException('cannot order competitors without child tables')
@@ -23,9 +27,8 @@ class DeTable(models.Model):
     def automated(self) -> bool:
         """Returns if this table can be automated.
         A table can be automated if no winners from it can be ranked >= the de's fight down to"""
-        return not self.winners and \
-               not self.detableentry_set.filter(entry__isnull=False).exists() and \
-               self.max_rank() > self.de.fight_down_to
+        return not self.detableentry_set.filter(entry__isnull=False).exists() or \
+               (not self.winners and self.max_rank() > self.de.fight_down_to)
 
     def max_rank(self) -> int:
         """returns the maximum rank attainable by competitors in this table"""
@@ -44,7 +47,11 @@ class DeTable(models.Model):
             if not (e.victory or e.against().victory):
                 raise UnfinishedTableException('cannot make child tables until all fights in this table are completed')
             if e.victory == e.against().victory:
-                raise Exception('Panic Database inconsistency')
+                if e.entry is None and e.against().entry is None:
+                    e.victory = not e.victory
+                    e.save()
+                else:
+                    raise Exception('Panic Database inconsistency')
         winners = self.children.create(de=self.de, winners=True)
         losers = self.children.create(de=self.de, winners=False)
         for e in self.detableentry_set.all():
