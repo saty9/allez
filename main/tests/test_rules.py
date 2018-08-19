@@ -55,6 +55,24 @@ class TestRules(TestCase):
         self.assertEqual(result, self.org)
         num += 1
 
+    def test_get_organisation_pool(self):
+        # Pool
+        stage = self.competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()
+        pool_stage.start(1)
+        test_object = pool_stage.pool_set.first()
+        result = rules.get_organisation(test_object)
+        self.assertEqual(result, self.org)
+
+    def test_get_organisation_de(self):
+        # DeTable
+        stage = self.competition.stage_set.create(type=Stage.DE, number=1)
+        de_stage = stage.destage_set.first()
+        de_stage.start()
+        test_object = de_stage.detable_set.first()
+        result = rules.get_organisation(test_object)
+        self.assertEqual(result, self.org)
+
     def test_predicate_is_dt(self):
         assert rules.is_dt(self.manager, self.competition)
         assert rules.is_dt(self.dt, self.competition)

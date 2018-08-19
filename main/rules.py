@@ -9,6 +9,10 @@ def get_organisation(object):
         return object.organisation
     elif object.__class__ == models.Stage:
         return object.competition.organisation
+    elif object.__class__ == models.Pool:
+        return object.stage.stage.competition.organisation
+    elif object.__class__ == models.DeTable:
+        return object.de.stage.competition.organisation
     else:
         try:
             return object.stage.competition.organisation
