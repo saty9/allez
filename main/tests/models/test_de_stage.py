@@ -47,6 +47,13 @@ class TestDeStage(TestCase):
         self.assertRaises(AssertionError, self.de_stage.start)
         self.assertEqual(self.de_stage.detable_set.count(), 1, "expecting only 1 table")
 
+    def test_function_start_sets_byes_to_lose(self):
+        self.de_stage.start()
+        for e in self.de_stage.detable_set.first().detableentry_set.all():
+            if e.entry is None:
+                self.assertFalse(e.victory)
+                assert e.against().victory
+
     def test_function_ordered_competitors(self):
         self.de_stage.start()
         make_boring_de_results(self.de_stage)
