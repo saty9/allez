@@ -64,12 +64,21 @@ class TestRules(TestCase):
         result = rules.get_organisation(test_object)
         self.assertEqual(result, self.org)
 
-    def test_get_organisation_de(self):
+    def test_get_organisation_de_table(self):
         # DeTable
         stage = self.competition.stage_set.create(type=Stage.DE, number=1)
         de_stage = stage.destage_set.first()
         de_stage.start()
         test_object = de_stage.detable_set.first()
+        result = rules.get_organisation(test_object)
+        self.assertEqual(result, self.org)
+
+    def test_get_organisation_de_table_entry(self):
+        # DeTableEntry
+        stage = self.competition.stage_set.create(type=Stage.DE, number=1)
+        de_stage = stage.destage_set.first()
+        de_stage.start()
+        test_object = de_stage.detable_set.first().detableentry_set.first()
         result = rules.get_organisation(test_object)
         self.assertEqual(result, self.org)
 
