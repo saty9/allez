@@ -18,6 +18,7 @@ from . import views
 
 urlpatterns = [
     path('pool/<int:pool_id>', views.pool, name='main/pool_endpoint'),
+    path('de_table/<int:table_id>', views.de_table, name='main/de_table_endpoint'),
     path('competition/<int:comp_id>', views.competition, name='main/competition_endpoint'),
     path('organisation/<int:org_id>', views.organisation, name='main/organisation_endpoint'),
     path('stage/<int:stage_id>', views.stage_router, name='main/stage_endpoint'),
