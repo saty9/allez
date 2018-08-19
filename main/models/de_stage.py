@@ -1,5 +1,6 @@
 import math
 from django.db import models
+from main.models.de_table import UnfinishedTableException
 
 
 class DeStage(models.Model):
@@ -7,8 +8,12 @@ class DeStage(models.Model):
     target = models.IntegerField(default=1)
     fight_down_to = models.IntegerField(default=1)
 
-    def ordered_competitors(self): 
-        return list(map(lambda x: x.entry, self.detable_set.get(parent__isnull=True).ordered_competitors()))
+    def ordered_competitors(self):
+        try:
+            return list(map(lambda x: x.entry, self.detable_set.get(parent__isnull=True).ordered_competitors()))
+        except UnfinishedTableException as e:
+            from main.models.stage import Stage
+            raise Stage.NotCompleteError(e)
 
     def start(self):
         """sets up a DE by creating the first table and seeding it with entries and null entries for byes"""
