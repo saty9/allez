@@ -1,10 +1,30 @@
 from django.db import models
+from django.utils.translation import gettext as _
+from django.contrib.humanize.templatetags.humanize import ordinal
 
 
 class DeTable(models.Model):
     de = models.ForeignKey('main.DeStage', on_delete=models.CASCADE)
     parent = models.ForeignKey('main.DeTable', on_delete=models.CASCADE, related_name='children', null=True)
     winners = models.BooleanField(default=True)
+
+    def title(self) -> str:
+        """Get a title string for a DeTable"""
+        max_rank = self.max_rank()
+        table_size = self.detableentry_set.count()
+        if max_rank == 1:
+            special_titles = {2: _("Final"),
+                              4: _("SemiFinal"),
+                              8: _("QuarterFinal")}
+            table_size = self.detableentry_set.count()
+            # Translators: title for a de table e.g. Table of 64
+            return special_titles.get(table_size, _("Table of ") + str(table_size))
+        elif table_size == 2:
+            # Translators: title for a de table of 2 e.g. Fight for 9th
+            return _("Fight for") + " " + ordinal(max_rank)
+        else:
+            # Translators: title for a de table e.g. Fights for 9th between 8
+            return _("Fights for") + " " + ordinal(max_rank) + " " + _("between") + " " + str(table_size)
 
     def ordered_competitors(self):
         if self.automated():
