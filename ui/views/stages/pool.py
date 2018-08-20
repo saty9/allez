@@ -1,6 +1,8 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
-from main.models import PoolStage, Stage
+from rules.contrib.views import permission_required, objectgetter
+from main.models import PoolStage, Stage, Pool
 from main.settings import MAX_POOL_SIZE
 
 
@@ -37,5 +39,7 @@ def manage_pool_stage(request, pool_stage_id):
                                                                 'pools': pools})
 
 
+@login_required
+@permission_required('main.manage_competition', fn=objectgetter(Pool, 'pool_id'))
 def dt_manage_pool(request, pool_id):
     return render(request, 'ui/stages/pool/dt_pool_edit.html', {'pool_id': pool_id})
