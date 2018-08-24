@@ -41,6 +41,8 @@ class TestDeStage(TestCase):
         expected_seed_order = list(self.de_stage.stage.input())
         actual_seed_order = list(map(lambda x: x.entry, self.de_stage.deseed_set.order_by('seed').all()))
         self.assertListEqual(expected_seed_order, actual_seed_order)
+        self.assertFalse(self.de_stage.deseed_set.filter(seed__lt=1).exists())
+        self.assertFalse(self.de_stage.deseed_set.filter(seed__gt=len(expected_seed_order)).exists())
 
     def test_function_start_already_started(self):
         self.de_stage.start()

@@ -39,7 +39,7 @@ class DeStage(models.Model):
 
         # creating seeds
         for index, entry in enumerate(entries):
-            self.deseed_set.create(entry=entry, seed=index)
+            self.deseed_set.create(entry=entry, seed=index + 1)
 
 
 def table_layout(rounds):
