@@ -43,6 +43,7 @@ class TestDeTable(TestCase):
 
     def test_function_make_children(self):
         make_boring_de_table_results(self.head_table)
+        self.assertFalse(self.head_table.complete)
         self.head_table.make_children()
         winner_table = self.head_table.children.filter(winners=True).first()
         expected_winner_table_entries = self.stage.input()[0:8]
@@ -56,6 +57,7 @@ class TestDeTable(TestCase):
                              list(map(lambda x: x.entry, loser_table.
                                       detableentry_set.
                                       order_by('entry__deseed__seed').all())))
+        assert self.head_table.complete
 
     def test_function_make_children_incomplete_fights(self):
         make_boring_de_table_results(self.head_table)
@@ -64,11 +66,18 @@ class TestDeTable(TestCase):
         entry1.save()
         self.assertRaises(UnfinishedTableException, self.head_table.make_children)
         self.assertEqual(self.head_table.children.count(), 0)
+        self.assertFalse(self.head_table.complete)
 
     def test_function_make_children_with_prexisting_children(self):
         make_boring_de_table_results(self.head_table)
         self.head_table.make_children()
         self.assertRaises(AssertionError, self.head_table.make_children)
+
+    def test_function_make_children_sets_automated_completion(self):
+        make_boring_de_table_results(self.head_table)
+        self.head_table.make_children()
+        assert self.head_table.children.get(winners=False).complete
+        self.assertFalse(self.head_table.children.get(winners=True).complete)
 
     def test_function_max_rank_table_head(self):
         self.assertEqual(self.head_table.max_rank(), 1)

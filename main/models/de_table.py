@@ -7,6 +7,7 @@ class DeTable(models.Model):
     de = models.ForeignKey('main.DeStage', on_delete=models.CASCADE)
     parent = models.ForeignKey('main.DeTable', on_delete=models.CASCADE, related_name='children', null=True)
     winners = models.BooleanField(default=True)
+    complete = models.BooleanField(default=False)
 
     def title(self) -> str:
         """Get a title string for a DeTable"""
@@ -87,6 +88,12 @@ class DeTable(models.Model):
                 against = bye.against()
                 against.victory = True
                 against.save()
+
+        self.complete = True
+        self.save()
+        if losers.automated():
+            losers.complete = True
+            losers.save()
 
 
 class UnfinishedTableException(Exception):
