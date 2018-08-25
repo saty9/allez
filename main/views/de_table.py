@@ -1,4 +1,7 @@
+from django.db.models import F
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
 from main.models import DeTable, Stage
 from main.utils.api_responses import api_failure, api_success
@@ -13,8 +16,18 @@ def de_table(request, table_id):
         else:
             return api_failure('unrecognised request')
     else:
+        return get_bouts(table)
 
-        return api_failure('not implemented')
+
+def get_bouts(table):
+    entries = table.detableentry_set.order_by('table_pos').annotate(seed=F('entry__deseed__seed')).\
+        values('id', 'entry_id', 'score', 'victory', 'seed', 'entry__competitor__name', 'entry__competitor__club__name')
+    bouts = []
+    x = 0
+    while x < len(entries):
+        bouts.append({'e0': entries[x], 'e1': entries[x + 1]})
+        x += 2
+    return JsonResponse({'bouts': bouts})
 
 
 def add_result(request, table):
@@ -31,6 +44,8 @@ def add_result(request, table):
     """
     if table.de.stage.state != Stage.STARTED:
         return api_failure('incorrect state', 'stage not currently running')
+    if table.children.exists():
+        return api_failure('child_exists', _('Cannot add results after next round of tables made'))
     e1_id = request.POST['entryA']
     e2_id = request.POST['entryB']
     e1 = table.detableentry_set.get(pk=e1_id)
@@ -45,6 +60,8 @@ def add_result(request, table):
 def do_add_result(request, e1, e2, e1_score, e2_score, e1_victory):
     if e1.against() != e2:
         return api_failure('bad entry pair', "these entries aren't fighting each other this round")
+    if (e1.entry is None and e1_victory) or (e2.entry is None and not e1_victory):
+        return api_failure('bye_victory', _('Byes cannot win a match'))
     if (e1_victory and e2_score > e1_score) or (not e1_victory and e2_score < e1_score):
         return api_failure('score victory mismatch')
     e1.victory = e1_victory
