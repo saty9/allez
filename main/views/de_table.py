@@ -49,6 +49,8 @@ def add_result(request, table):
         return api_failure('incorrect state', 'stage not currently running')
     if table.children.exists():
         return api_failure('child_exists', _('Cannot add results after next round of tables made'))
+    if table.complete:
+        return api_failure('table_complete', _('This table has already been marked as complete'))
     e1_id = request.POST['entryA']
     e2_id = request.POST['entryB']
     e1 = table.detableentry_set.get(pk=e1_id)
@@ -80,6 +82,10 @@ def do_add_result(request, e1, e2, e1_score, e2_score, e1_victory):
 def mark_table_complete(request, table):
     if table.complete:
         return api_failure('already_complete', _("This table is already marked as complete"))
+    if table.detableentry_set.count() == 2:
+        table.complete = True
+        table.save()
+        return api_success()
     try:
         table.make_children()
         return api_success()

@@ -1,7 +1,7 @@
 from main.tests.factories.competition_factory import PreAddedCompetitionOfSize
 from main.tests.factories.org_member_factory import ManagerFactory
 from main.tests.factories.organisation_factory import OrganisationFactory
-from main.tests.models.test_de_stage import make_boring_de_table_results
+from main.tests.models.test_de_stage import make_boring_de_table_results, make_boring_de_results
 from django.test import TestCase, Client
 from django.urls import reverse
 from main.models import Stage
@@ -171,13 +171,42 @@ class TestDeTableAPI(TestCase):
             self.assertEqual(eB.score, eB_before.score)
             self.assertEqual(eB.victory, eB_before.victory)
 
+    def test_add_result_completed_table(self):
+        self.c.force_login(self.manager)
+        make_boring_de_results(self.de_stage)
+        target_table = self.table_head
+        while target_table.detableentry_set.count() != 2:
+            target_table = target_table.children.get(winners=True)
+        target_table.complete = True
+        target_table.save()
+        eA = target_table.detableentry_set.first()
+        eB = eA.against()
+        eA_before = eA
+        eB_before = eB
+        target = reverse('main/de_table_endpoint', kwargs={'table_id': target_table.id})
+        out = self.c.post(target, {'type': 'add_result',
+                                   'entryA': eA.id,
+                                   'entryB': eB.id,
+                                   'scoreA': 15,
+                                   'scoreB': 7,
+                                   'victoryA': 1})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'table_complete',
+                                           'verbose_reason': 'This table has already been marked as complete'})
+        eA.refresh_from_db()
+        eB.refresh_from_db()
+        self.assertEqual(eA.score, eA_before.score)
+        self.assertEqual(eA.victory, eA_before.victory)
+        self.assertEqual(eB.score, eB_before.score)
+        self.assertEqual(eB.victory, eB_before.victory)
+
     def test_table_complete_base(self):
         self.c.force_login(self.manager)
         make_boring_de_table_results(self.table_head)
         out = self.c.post(self.target, {'type': 'table_complete'})
         self.assertJSONEqual(out.content, {'success': True})
         self.table_head.refresh_from_db()
-        assert self.table_head.children.exists
+        assert self.table_head.children.exists()
         assert self.table_head.complete
 
     def test_table_complete_bouts_incomplete(self):
@@ -206,6 +235,19 @@ class TestDeTableAPI(TestCase):
                                            'reason': 'already_complete',
                                            'verbose_reason': 'This table is already marked as complete'})
         assert self.table_head.complete
+
+    def test_table_complete_table_of_2(self):
+        self.c.force_login(self.manager)
+        make_boring_de_results(self.de_stage)
+        target_table = self.table_head
+        while target_table.detableentry_set.count() != 2:
+            target_table = target_table.children.get(winners=True)
+        target = reverse('main/de_table_endpoint', kwargs={'table_id': target_table.id})
+        out = self.c.post(target, {'type': 'table_complete'})
+        self.assertJSONEqual(out.content, {'success': True})
+        target_table.refresh_from_db()
+        self.assertFalse(target_table.children.exists())
+        assert target_table.complete
 
     def test_get_bouts(self):
         self.c.force_login(self.manager)
