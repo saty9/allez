@@ -171,6 +171,72 @@ class TestDeTableAPI(TestCase):
             self.assertEqual(eB.score, eB_before.score)
             self.assertEqual(eB.victory, eB_before.victory)
 
+    def test_table_complete_base(self):
+        self.c.force_login(self.manager)
+        make_boring_de_table_results(self.table_head)
+        out = self.c.post(self.target, {'type': 'table_complete'})
+        self.assertJSONEqual(out.content, {'success': True})
+        self.table_head.refresh_from_db()
+        assert self.table_head.children.exists
+        assert self.table_head.complete
+
+    def test_table_complete_bouts_incomplete(self):
+        self.c.force_login(self.manager)
+        make_boring_de_table_results(self.table_head)
+        e1 = self.table_head.detableentry_set.last()
+        e2 = e1.against()
+        e1.victory = False
+        e1.save()
+        e2.victory = False
+        e2.save()
+        out = self.c.post(self.target, {'type': 'table_complete'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'incomplete_bouts',
+                                           'verbose_reason': 'One or more bouts incomplete'})
+        self.table_head.refresh_from_db()
+        self.assertFalse(self.table_head.children.exists())
+        self.assertFalse(self.table_head.complete)
+
+    def test_table_complete_already_complete(self):
+        self.c.force_login(self.manager)
+        make_boring_de_table_results(self.table_head)
+        self.table_head.make_children()
+        out = self.c.post(self.target, {'type': 'table_complete'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'already_complete',
+                                           'verbose_reason': 'This table is already marked as complete'})
+        assert self.table_head.complete
+
+    def test_get_bouts(self):
+        self.c.force_login(self.manager)
+        make_boring_de_table_results(self.table_head)
+        expected_bouts = []
+        entries = list(self.table_head.detableentry_set.all())
+
+        def response_dict(e):
+            seed = self.de_stage.deseed_set.get(entry=e.entry).seed
+            return {'id': e.id,
+                    'entry_id': e.entry.id,
+                    'score': e.score,
+                    'victory': e.victory,
+                    'seed': seed,
+                    'entry__competitor__name': e.entry.competitor.name,
+                    'entry__competitor__club__name': e.entry.competitor.club.name}
+        for e in entries:
+            against = e.against()
+            bout = {'e0': response_dict(e),
+                    'e1': response_dict(against)}
+            expected_bouts.append(bout)
+            entries.remove(against)
+        out = self.c.get(self.target)
+        self.assertJSONEqual(out.content, {'bouts': expected_bouts})
+
+    def test_get_bouts_404(self):
+        self.c.force_login(self.manager)
+        target = reverse('main/de_table_endpoint', kwargs={'table_id': 5})
+        out = self.c.get(target)
+        self.assertEqual(out.status_code, 404)
+
     def test_post_bad_type(self):
         self.c.force_login(self.manager)
         out = self.c.post(self.target, {'type': 'anything_else'})

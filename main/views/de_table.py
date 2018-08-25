@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
 from main.models import DeTable, Stage
+from main.models.de_table import UnfinishedTableException
 from main.utils.api_responses import api_failure, api_success
 
 
@@ -13,6 +14,8 @@ def de_table(request, table_id):
         rtype = request.POST['type']
         if rtype == 'add_result':
             return add_result(request, table)
+        elif rtype == 'table_complete':
+            return mark_table_complete(request, table)
         else:
             return api_failure('unrecognised request')
     else:
@@ -71,5 +74,16 @@ def do_add_result(request, e1, e2, e1_score, e2_score, e1_victory):
     e1.save()
     e2.save()
     return api_success()
+
+
+@permission_required_json('main.manage_competition', fn=direct_object)
+def mark_table_complete(request, table):
+    if table.complete:
+        return api_failure('already_complete', _("This table is already marked as complete"))
+    try:
+        table.make_children()
+        return api_success()
+    except UnfinishedTableException:
+        return api_failure('incomplete_bouts', _('One or more bouts incomplete'))
 
 
