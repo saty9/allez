@@ -1,0 +1,184 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'DE' %}{% endblock %}
+
+{% block styles %}
+    <style>
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .form-control {
+            min-width: 45px;
+        }
+
+        .de-score-input {
+            max-width: 5rem;
+            float: right;
+        }
+
+        .winner {
+            background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
+            padding-left: 30px;
+        }
+
+        .loser {
+            background: url({% static 'ui/images/D.svg' %}) no-repeat scroll 7px 9px;
+            padding-left: 30px;
+        }
+
+        .list-group-item {
+            border: none;
+        }
+    </style>
+    <style>
+        .card-container {
+            display: grid;
+            padding: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(25rem, 1fr));
+            grid-gap: 1rem;
+        }
+
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <dialog id="get_winner_dialog">
+        <form method="dialog">
+            <section>
+                <p>{% trans 'Who Won?' noop %}</p>
+            </section>
+            <menu>
+                <button id="d_opt_1"></button>
+                <button id="d_opt_2"></button>
+            </menu>
+        </form>
+    </dialog>
+    <br>
+    <h1 class="text-center">{{ table.title }}</h1>
+    <div class="card-container">
+    </div>
+    <div class="text-center">
+        {% if not table.complete %}
+            {% if ready %}
+                <button type="button" class="btn btn-success centre" onclick="confirm_table()">{% trans "Confirm" %}</button>
+            {% else %}
+                <button class="btn btn-info center">{% trans "Check Results" %}</button>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script src="{% static 'dialog-polyfill/dialog-polyfill.js' %}"></script>
+    <script src="{% static 'handlebars/dist/handlebars.runtime.min.js' %}"></script>
+    <script src="{% static 'ui/templates/de_display_entry.js' %}"></script>
+    <script src="{% static 'ui/templates/de_match.js' %}"></script>
+    <script>
+
+        function runTemplate() {
+            $.ajax({
+                type: 'GET',
+                url: '{% url 'main/de_table_endpoint'  table.id %}',
+                success: function (table_data) {
+                    console.log(table_data);
+                    Handlebars.registerPartial('display_entry', Handlebars.templates.de_display_entry);
+                    for (var x = 0; x < table_data.bouts.length; x++) {
+                        $('.card-container').append(Handlebars.templates.de_match(table_data.bouts[x]));
+                    }
+                    {% if table.complete %}
+                        $(':input[type=number]').prop('readonly', true);
+                    {% else %}
+                        $(':input[type=number]').on('mousewheel', function (e) {
+                            e.preventDefault();
+                        });
+                        $("input[type='number']").blur(score_added);
+                    {% endif %}
+                },
+                error: function (data) {
+                    console.log(data);
+                    window.setTimeout(runTemplate(), 1000);
+                }
+            });
+
+        }
+
+        $(window).bind("load", function () {
+            runTemplate();
+        });
+
+        function score_added(e) {
+            let inputs = $(e.target).closest('.list-group').find('input');
+            inputs.removeClass('winner');
+            inputs.removeClass('loser');
+            let eA = inputs[0].dataset.entry_id;
+            let eB = inputs[1].dataset.entry_id;
+            let sA = parseInt(inputs[0].value);
+            let sB = parseInt(inputs[1].value);
+            if (sA != sB) {
+                let victoryA = sA > sB;
+                post_score(eA, eB, sA, sB, victoryA, inputs)
+            } else {
+                var button1 = $('#d_opt_1');
+                var button2 = $('#d_opt_2');
+                var dialog = $('#get_winner_dialog')[0];
+
+                button1.off('click');
+                button1.click(function () {
+                    post_score(eA, eB, sA, sB, true, inputs)
+                });
+                button1.html($(inputs[0]).parent().children('span')[0].innerHTML);
+
+                button2.off('click');
+                button2.click(function () {
+                    post_score(eA, eB, sA, sB, false, inputs)
+                });
+                button2.html($(inputs[1]).parent().children('span')[0].innerHTML);
+                dialogPolyfill.registerDialog(dialog);
+                dialog.showModal();
+            }
+        }
+
+        function post_score(eA, eB, sA, sB, vA, inputs) {
+            let data = {
+                'type': 'add_result',
+                'entryA': eA,
+                'scoreA': sA,
+                'entryB': eB,
+                'scoreB': sB,
+                'victoryA': (vA) ? 1 : 0,
+            };
+            console.log(data);
+            let successful = function (result) {
+                if (vA) {
+                    inputs[0].classList.add('winner');
+                    inputs[1].classList.add('loser');
+                } else {
+                    inputs[1].classList.add('winner');
+                    inputs[0].classList.add('loser');
+                }
+            };
+
+            api_post("{% url 'main/de_table_endpoint' table.id %}", data, successful);
+        }
+
+        function confirm_table(){
+            let data = {
+                'type': 'table_complete'
+            };
+            let successful = function(result){location.reload()};
+            api_post("{% url 'main/de_table_endpoint' table.id %}", data, successful)
+        }
+
+    </script>
+{% endblock %}

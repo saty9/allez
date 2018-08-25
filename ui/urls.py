@@ -20,6 +20,7 @@ urlpatterns = [
     path('hi', views.test),
     path('change_org/', views.change_org, name='ui/change_org'),
     path('dt/pool/<int:pool_id>', views.dt_manage_pool, name='ui/dt_manage_pool'),
+    path('dt/de/<int:de_table_id>', views.dt_manage_de_table, name='ui/dt_manage_de'),
     path('<slug:org_slug>', views.organisation, name='ui/organisation/show'),
     path('<slug:org_slug>/competitions', views.list_competitions, name='ui/org/competitions'),
     path('<slug:org_slug>/competitions/create', views.create_competition, name='ui/create_competition'),

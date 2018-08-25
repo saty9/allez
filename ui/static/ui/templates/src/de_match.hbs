@@ -1,0 +1,20 @@
+<div class="card">
+    <div class="card-body list-group">
+        <div class="list-group-item">
+            <span>{{> display_entry this.e0 }}</span>
+            <input type="number" class="form-control de-score-input {{#if this.e0.victory ~}}
+                 winner
+            {{~else if this.e1.victory ~}}
+                 loser
+            {{~/if ~}}" min="0" data-entry_id="{{this.e0.id}}" value="{{this.e0.score}}">
+        </div>
+        <div class="list-group-item">
+            <span>{{> display_entry this.e1 }}</span>
+            <input type="number" class="form-control de-score-input {{#if this.e1.victory ~}}
+                 winner
+            {{~else if this.e0.victory ~}}
+                 loser
+            {{~/if ~}}" min="0" data-entry_id="{{this.e1.id}}" value="{{this.e1.score}}">
+        </div>
+    </div>
+</div>

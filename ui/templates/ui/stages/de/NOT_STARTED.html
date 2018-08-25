@@ -1,0 +1,54 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+
+{% block styles %}
+    <style>
+        .loader {
+            border: 16px solid lightgray;
+            border-bottom: 16px solid black;
+            border-top: 16px solid black;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .centered {
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <br>
+    <div class="centered">
+        <div class="loader centered"></div>
+        <br>
+        <div class="text-center">{% trans "Creating Tables" %}</div>
+    </div>
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        $(document).ready(function (){
+            let successful = function(data) {
+                location.reload()
+            };
+            api_post("{% url 'main/stage_endpoint' stage.id %}", {'type': 'start_stage'}, successful);
+        })
+    </script>
+{% endblock %}
