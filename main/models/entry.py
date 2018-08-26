@@ -4,6 +4,7 @@ from django.db import models
 class Entry(models.Model):
     class Meta:
         unique_together = (('competition', 'competitor'),)
+        get_latest_by = 'competition__date'
     EXCLUDED = "EX"
     DID_NOT_FINISH = "WI"  # Withdrawn
     NOT_CHECKED_IN = "NC"

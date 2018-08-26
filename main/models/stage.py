@@ -73,6 +73,7 @@ class Stage(models.Model):
 
     class Meta:
         unique_together = ('number', 'competition')
+        get_latest_by = 'number'
 
     class NotCompleteError(Exception):
         def __init__(self, message):
