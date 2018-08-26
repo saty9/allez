@@ -13,7 +13,7 @@
                     <div class="list-group-item list-group-item-dark">{% trans 'Pool'%} {{ forloop.counter }}</div>
                     <div id="pool-{{ pool.id }}" class="sortable">
                         {% for p_entry in pool.poolentry_set.all %}
-                            <div id="{{ p_entry.entry.id }}" class="list-group-item">{{ p_entry.entry.competitor.club.name }}-{{ p_entry.entry.competitor.name }}</div>
+                            <div id="{{ p_entry.entry.id }}" class="list-group-item">{{ p_entry.entry }}</div>
                         {% endfor %}
                     </div>
                 </div>

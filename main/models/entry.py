@@ -20,6 +20,7 @@ class Entry(models.Model):
     finishing_place = models.IntegerField(null=True, default=None)
     exited_at_stage = models.ForeignKey('main.stage', on_delete=models.CASCADE, null=True, default=None)
     state = models.CharField(max_length=2, choices=states, default=NOT_CHECKED_IN)
+    club = models.ForeignKey('main.Club', on_delete=models.PROTECT)
 
     def __str__(self):
-        return "({}) - {}".format(self.competition_id, self.competitor.name)
+        return "({}) - {}".format(self.club.name, self.competitor.name)

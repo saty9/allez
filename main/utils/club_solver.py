@@ -11,7 +11,7 @@ def attempt_solve(pools_in: List[List[Entry]]) -> List[List[Entry]]:
     This is based on code written for an A-level practical and will not always find the optimal solution"""
     pools: List[Tuple[Entry, Club, bool]] = []
     for pool in pools_in:
-        pools.append(list(map(lambda z: (z, z.competitor.club, False), pool)))
+        pools.append(list(map(lambda z: (z, z.club, False), pool)))
     number_of_pools = len(pools)
     conflicts = conflicts_dict_list(pools)
 

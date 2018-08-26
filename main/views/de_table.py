@@ -24,7 +24,7 @@ def de_table(request, table_id):
 
 def get_bouts(table):
     entries = table.detableentry_set.order_by('table_pos').annotate(seed=F('entry__deseed__seed')).\
-        values('id', 'entry_id', 'score', 'victory', 'seed', 'entry__competitor__name', 'entry__competitor__club__name')
+        values('id', 'entry_id', 'score', 'victory', 'seed', 'entry__competitor__name', 'entry__club__name')
     bouts = []
     x = 0
     while x < len(entries):

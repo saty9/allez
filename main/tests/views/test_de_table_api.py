@@ -263,7 +263,7 @@ class TestDeTableAPI(TestCase):
                     'victory': e.victory,
                     'seed': seed,
                     'entry__competitor__name': e.entry.competitor.name,
-                    'entry__competitor__club__name': e.entry.competitor.club.name}
+                    'entry__club__name': e.entry.club.name}
         for e in entries:
             against = e.against()
             bout = {'e0': response_dict(e),

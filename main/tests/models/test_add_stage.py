@@ -34,7 +34,7 @@ class TestAddStage(TestCase):
     def test_where_TOP(self):
         stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.STARTED, number=0)
         add_stage = stage.addstage_set.first()
-        entry_set = self.competition.entry_set.all()
+        entry_set = self.competition.entry_set.order_by('id').all()
         for index, e in enumerate(entry_set[1:]):
             add_stage.addcompetitor_set.create(entry=e, sequence=index)
         self.assertEqual(add_stage.ordered_competitors(), list(entry_set[1:]))
@@ -52,7 +52,7 @@ class TestAddStage(TestCase):
     def test_where_BOTTOM(self):
         stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.STARTED, number=0)
         add_stage = stage.addstage_set.first()
-        entry_set = self.competition.entry_set.all()
+        entry_set = self.competition.entry_set.order_by('id').all()
         for index, e in enumerate(entry_set[1:]):
             add_stage.addcompetitor_set.create(entry=e, sequence=index)
         self.assertEqual(add_stage.ordered_competitors(), list(entry_set[1:]))

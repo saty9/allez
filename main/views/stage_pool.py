@@ -65,7 +65,7 @@ def results_pdf(request, stage: Stage):
     for index, f in enumerate(sorted(stage.poolstage_set.first().results(), reverse=True)):
         data.append([index + 1,
                      f.entry.competitor.name,
-                     f.entry.competitor.club.name,
+                     f.entry.club.name,
                      "{:.2}".format(f.win_percentage),
                      f.TS,
                      f.TR,

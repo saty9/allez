@@ -17,10 +17,10 @@
     <br>
     <ul class="list-group">
         {% for e in survivors %}
-            <div class="list-group-item list-group-item-success">{{ e.competitor.club.name }}-{{ e.competitor.name }}</div>
+            <div class="list-group-item list-group-item-success">{{ e }}</div>
         {% endfor %}
         {% for e in culled %}
-            <div class="list-group-item list-group-item-warning">{{ e.competitor.club.name }}-{{ e.competitor.name }}</div>
+            <div class="list-group-item list-group-item-warning">{{ e }}</div>
         {% endfor %}
     </ul>
     <br>

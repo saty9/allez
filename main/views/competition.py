@@ -113,8 +113,8 @@ def entry_csv(request, comp):
                             club = club.first()
                         else:
                             club = Club.objects.create(name=new_entry[1])
-                    competitor = org_competitiors.create(club=club, name=new_entry[0], license_number=new_entry[2])
-                comp.entry_set.create(competitor=competitor)
+                    competitor = org_competitiors.create(name=new_entry[0], license_number=new_entry[2])
+                comp.entry_set.create(competitor=competitor, club=club)
             out = {'success': True,
                    'added_count': len(data)}
             return JsonResponse(out)
