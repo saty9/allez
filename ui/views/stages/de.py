@@ -38,7 +38,8 @@ def manage_de_stage(request, de_stage_id):
 @permission_required('main.manage_competition', fn=objectgetter(DeTable, 'de_table_id'))
 def dt_manage_de_table(request, de_table_id):
     de_table = get_object_or_404(DeTable, pk=de_table_id)
-    context = {'table': de_table}
+    context = {'table': de_table,
+               'comp': de_table.de.stage.competition}
     entries = de_table.detableentry_set.order_by('table_pos').annotate(seed=F('entry__deseed__seed')).all()
     if not de_table.complete:
         context['ready'] = all(map(lambda x: x.victory or x.against().victory, entries))

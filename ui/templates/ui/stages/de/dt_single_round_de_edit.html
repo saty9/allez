@@ -72,7 +72,7 @@
             {% if ready %}
                 <button type="button" class="btn btn-success centre" onclick="confirm_table()">{% trans "Confirm" %}</button>
             {% else %}
-                <button class="btn btn-info center">{% trans "Check Results" %}</button>
+                <button class="btn btn-info center" onclick="location.reload()">{% trans "Check Results" %}</button>
             {% endif %}
         {% endif %}
     </div>
@@ -176,7 +176,9 @@
             let data = {
                 'type': 'table_complete'
             };
-            let successful = function(result){location.reload()};
+            let successful = function(result){
+                location.assign("{% url 'ui/manage_stage' comp.organisation.slug comp.id table.de.stage %}")
+            };
             api_post("{% url 'main/de_table_endpoint' table.id %}", data, successful)
         }
 
