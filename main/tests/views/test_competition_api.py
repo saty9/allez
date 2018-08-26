@@ -1,0 +1,215 @@
+import csv
+from io import StringIO
+from ..factories.competition_factory import BaseCompetitionFactory, PreAddedCompetitionOfSize
+from ..factories.org_member_factory import ManagerFactory
+from ..factories.organisation_factory import OrganisationFactory
+from ..factories.club_factory import ClubFactory
+from ..factories.competitor_factory import CompetitorFactory
+from django.test import TestCase, Client
+from django.urls import reverse
+from main.models import Competition, Club, Stage
+
+
+class TestCompetitionAPI(TestCase):
+
+    def setUp(self):
+        self.c = Client()
+        self.competition = BaseCompetitionFactory()  # type: Competition
+        self.manager = ManagerFactory(organisation=self.competition.organisation).user
+        self.target = reverse('main/competition_endpoint', kwargs={'comp_id': self.competition.id})
+
+    def test_authorization_block(self):
+        out = self.c.post(self.target, {'type': 'anything'})
+        unauthorised_message = {'success': False, 'reason': 'NotLoggedIn'}
+        self.assertJSONEqual(out.content, unauthorised_message, 'Unauthenticated posts should be blocked')
+
+        org = OrganisationFactory()
+        wrong_org_manager = ManagerFactory(organisation=org).user
+        self.c.force_login(wrong_org_manager)
+        out = self.c.post(self.target, {'type': 'set_cull_level'})
+        unauthorised_message = {'success': False, 'reason': 'InsufficientPermissions'}
+        self.assertJSONEqual(out.content, unauthorised_message, 'Unauthenticated posts should be blocked')
+
+    def test_entry_csv_file_upload_base(self):
+        self.c.force_login(self.manager)
+        entries = []
+        entry_vals = []
+        for _ in range(8):
+            competitor = CompetitorFactory.build()
+            club = ClubFactory.build()
+            entries.append((competitor, club))
+            entry_vals.append((competitor.name, club.name, competitor.license_number))
+        f = StringIO()
+        csv.writer(f).writerows(entry_vals)
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': True,
+                                           'added_count': len(entries)})
+        self.assertEqual(len(entries), self.competition.entry_set.count())
+        self.assertEqual(list(self.competition.stage_set.values('type', 'state')), [{'type': Stage.ADD,
+                                                                                     'state': Stage.NOT_STARTED}])
+        created_entries = self.competition.entry_set.all().values_list('competitor__name',
+                                                                       'club__name',
+                                                                       'competitor__license_number')
+        self.assertEqual(entry_vals, list(created_entries))
+
+    def test_entry_csv_file_upload_add_stage_already_exists(self):
+        comp = PreAddedCompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        self.c.force_login(self.manager)
+        entry_vals = list(comp.entry_set.all().values_list('competitor__name',
+                                                                       'club__name',
+                                                                       'competitor__license_number'))
+        vals_to_add = []
+        adding = 8
+        for _ in range(adding):
+            competitor = CompetitorFactory.build()
+            club = ClubFactory.build()
+            vals_to_add.append((competitor.name, club.name, competitor.license_number))
+        entry_vals.extend(vals_to_add)
+        f = StringIO()
+        csv.writer(f).writerows(vals_to_add)
+        f.seek(0)
+        target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+        out = self.c.post(target, {'type': 'entry_csv',
+                                   'file': f})
+        self.assertJSONEqual(out.content, {'success': True,
+                                           'added_count': adding})
+        self.assertEqual(len(entry_vals), comp.entry_set.count())
+        self.assertEqual(comp.stage_set.filter(type=Stage.ADD).count(), 2)
+        created_entries = comp.entry_set.all().values_list('competitor__name',
+                                                                       'club__name',
+                                                                       'competitor__license_number')
+        self.assertEqual(entry_vals, list(created_entries))
+
+    def test_entry_csv_file_upload_repeated_club(self):
+        self.c.force_login(self.manager)
+        entries = []
+        entry_vals = []
+        for _ in range(8):
+            competitor = CompetitorFactory.build()
+            club = ClubFactory.build()
+            entries.append((competitor, club))
+            entry_vals.append((competitor.name, club.name, competitor.license_number))
+        entry_vals[0] = (entry_vals[0][0], entry_vals[1][1], entry_vals[0][2])
+        f = StringIO()
+        csv.writer(f).writerows(entry_vals)
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': True,
+                                           'added_count': len(entries)})
+        self.assertEqual(len(entries), self.competition.entry_set.count())
+        self.assertEqual(len(entries) - 1, Club.objects.count())
+        created_entries = self.competition.entry_set.all().values_list('competitor__name',
+                                                                       'club__name',
+                                                                       'competitor__license_number')
+        self.assertEqual(entry_vals, list(created_entries))
+
+    def test_entry_csv_file_upload_no_entries(self):
+        self.c.force_login(self.manager)
+        f = StringIO()
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'row_column_error',
+                                           'verbose_reason': 'Unexpected number of rows/columns in uploaded file'})
+        self.assertEqual(0, self.competition.entry_set.count())
+
+    def test_entry_csv_file_upload_column_errors(self):
+        self.c.force_login(self.manager)
+        f = StringIO()
+        csv.writer(f).writerows([['name', 'club', 'license', 'might show up'], ['a', 'b', 'c', 'd']])
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'row_column_error',
+                                           'verbose_reason': 'Unexpected number of rows/columns in uploaded file'})
+        f = StringIO()
+        csv.writer(f).writerows([['name', 'club'], ['a', 'b']])
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'row_column_error',
+                                           'verbose_reason': 'Unexpected number of rows/columns in uploaded file'})
+        self.assertEqual(0, self.competition.entry_set.count())
+
+    def test_add_stage_base(self):
+        self.c.force_login(self.manager)
+        number = -1
+        for stage_type in [Stage.ADD, Stage.POOL, Stage.CULL, Stage.DE]:
+            out = self.c.post(self.target, {'type': 'add_stage',
+                                            'number': number,
+                                            'stage_type': stage_type})
+            self.assertJSONEqual(out.content, {'success': True})
+            number += 1
+            assert self.competition.stage_set.filter(number=number, type=stage_type).exists()
+            self.assertEqual(self.competition.stage_set.count(), number + 1)
+
+    def test_add_stage_bad_type(self):
+        self.c.force_login(self.manager)
+        out = self.c.post(self.target, {'type': 'add_stage',
+                                        'number': 0,
+                                        'stage_type': 'anything'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'bad_type',
+                                           'verbose_reason': 'Failed to add stage: unrecognised stage type'})
+        self.assertEqual(self.competition.stage_set.count(), 0)
+
+    def test_add_stage_insert_between(self):
+        self.c.force_login(self.manager)
+        self.competition.stage_set.create(number=0, type=Stage.ADD)
+        self.competition.stage_set.create(number=1, type=Stage.DE)
+        out = self.c.post(self.target, {'type': 'add_stage',
+                                        'number': 0,
+                                        'stage_type': Stage.CULL})
+        self.assertJSONEqual(out.content, {'success': True})
+        assert self.competition.stage_set.filter(number=1, type=Stage.CULL).exists()
+        assert self.competition.stage_set.filter(number=2, type=Stage.DE).exists()
+        self.assertEqual(self.competition.stage_set.count(), 3)
+
+    def test_add_stage_unappendable(self):
+        self.c.force_login(self.manager)
+        self.competition.stage_set.create(number=0, type=Stage.ADD, state=Stage.FINISHED)
+        self.competition.stage_set.create(number=1, type=Stage.DE)
+        out = self.c.post(self.target, {'type': 'add_stage',
+                                        'number': 0,
+                                        'stage_type': Stage.CULL})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'stage_unappendable_to',
+                                           'verbose_reason': 'Stage cannot be appended to'})
+        self.assertFalse(self.competition.stage_set.filter(number=1, type=Stage.CULL).exists())
+        self.assertEqual(self.competition.stage_set.count(), 2)
+
+    def test_delete_stage(self):
+        self.c.force_login(self.manager)
+        victim = self.competition.stage_set.create(number=0, type=Stage.ADD)
+        shuffle_down = self.competition.stage_set.create(number=1, type=Stage.DE)
+        out = self.c.post(self.target, {'type': 'delete_stage',
+                                        'id': victim.id})
+        self.assertJSONEqual(out.content, {'success': True})
+        self.assertFalse(self.competition.stage_set.filter(id=victim.id).exists())
+        self.assertEqual(self.competition.stage_set.count(), 1)
+        shuffle_down.refresh_from_db()
+        self.assertEqual(shuffle_down.number, 0)
+
+    def test_delete_stage_undeletable(self):
+        self.c.force_login(self.manager)
+        victim = self.competition.stage_set.create(number=0, type=Stage.ADD, state=Stage.LOCKED)
+        out = self.c.post(self.target, {'type': 'delete_stage',
+                                        'id': victim.id})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'stage_undeletable',
+                                           'verbose_reason': 'Cannot delete this stage'})
+        assert self.competition.stage_set.filter(id=victim.id).exists()
+        self.assertEqual(self.competition.stage_set.count(), 1)
+
+    def test_post_bad_type(self):
+        self.c.force_login(self.manager)
+        out = self.c.post(self.target, {'type': 'anything_else'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'unrecognised request',
+                                           'verbose_reason': 'Unrecognised request'})
