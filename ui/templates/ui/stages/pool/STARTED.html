@@ -35,7 +35,7 @@
 
     {% if all_completed %}
         <div class="col text-center">
-            <button type="button" class="btn btn-success" onclick="submit()">{% trans "Confirm" %}</button>
+            <button type="button" class="btn btn-success" onclick="send_stage_complete()">{% trans "Confirm" %}</button>
         </div>
     {% endif %}
 
@@ -44,5 +44,12 @@
 {% block scripts %}
     <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
     <script>
+    function send_stage_complete() {
+            let data = {'type': 'finish_stage'};
+            let successful = function (result) {
+                location.reload()
+            };
+            api_post("{% url 'main/stage_endpoint' stage.id %}", data, successful)
+        }
     </script>
 {% endblock %}
