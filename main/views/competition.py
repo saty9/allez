@@ -108,29 +108,13 @@ def entry_csv(request, comp):
         return api_failure('row_column_error',
                            _('Unexpected number of rows/columns in uploaded file'))
     org_competitors = comp.organisation.competitor_set
-    for new_entry in data:
-        query = org_competitors.filter(license_number=new_entry[2])
-        if query.exists():
-            competitor = query.first()
-        else:
-            competitor = org_competitors.create(name=new_entry[0], license_number=new_entry[2])
-        club_name = new_entry[1]
-        club = Club.objects.filter(name=club_name)
-        if club.exists():
-            club = club.first()
-        else:
-            club_name = Club.simplify_name(new_entry[1])
-            club = Club.objects.filter(name__icontains=club_name)
-            if club.exists():
-                club = club.first()
-            else:
-                club = Club.objects.create(name=new_entry[1])
-        comp.entry_set.get_or_create(competitor=competitor, club=club)
     if comp.stage_set.exists():
         number = comp.stage_set.latest().number + 1
     else:
         number = 0
-    comp.stage_set.create(type=Stage.ADD, number=number)
+    add_stage = comp.stage_set.create(type=Stage.ADD, number=number)
+    for new_entry in data:
+        comp.add_entry(new_entry[2], new_entry[0], new_entry[1])
     out = {'success': True,
            'added_count': len(data)}
     return JsonResponse(out)
