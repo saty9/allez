@@ -1,0 +1,56 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Check In' %}{% endblock %}
+
+{% block body %}
+    <h2>{% trans 'Check In' %}</h2>
+    <button id="all_check_in_button" class="btn btn-warning"
+            onclick="check_all_in()">{% trans 'Check In all entries' %}</button>
+    <br>
+    <br>
+    <table class="table">
+        <tr>
+            <th>{% trans 'Name' %}</th>
+            <th>{% trans 'Club' %}</th>
+            <th></th>
+        </tr>
+        {% for entry in entries %}
+            <tr>
+                <td>{{ entry.competitor.name }}</td>
+                <td>{{ entry.club.name }}</td>
+                <td>{% if entry.state == entry.NOT_CHECKED_IN %}
+                    <button class="btn btn-primary" type="button"
+                            data-id="{{ entry.id }}">{% trans 'Check In' %}</button>
+                {% endif %}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        function check_all_in() {
+            let data = {
+                'type': 'check_in_all'
+            };
+            let success = function (data) {
+                location.assign("{% url 'ui/manage_competition' competition.organisation.slug competition.id %}")
+            };
+            api_post("{% url 'main/competition_endpoint' competition.id %}", data, success)
+        }
+
+        $("td > button").click(function (event) {
+            let data = {
+                'type': 'check_in',
+                'id': this.dataset.id
+            };
+            let success = function(data){
+                $(event.target).remove()
+            };
+            api_post("{% url 'main/competition_endpoint' competition.id %}", data, success)
+        });
+    </script>
+{% endblock %}
