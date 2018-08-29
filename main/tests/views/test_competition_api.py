@@ -1,13 +1,13 @@
 import csv
 from io import StringIO
-from ..factories.competition_factory import BaseCompetitionFactory, PreAddedCompetitionOfSize
+from ..factories.competition_factory import BaseCompetitionFactory, PreAddedCompetitionOfSize, CompetitionOfSize
 from ..factories.org_member_factory import ManagerFactory
 from ..factories.organisation_factory import OrganisationFactory
 from ..factories.club_factory import ClubFactory
 from ..factories.competitor_factory import CompetitorFactory
 from django.test import TestCase, Client
 from django.urls import reverse
-from main.models import Competition, Club, Stage
+from main.models import Competition, Club, Stage, Entry
 
 
 class TestCompetitionAPI(TestCase):
@@ -206,6 +206,65 @@ class TestCompetitionAPI(TestCase):
                                            'verbose_reason': 'Cannot delete this stage'})
         assert self.competition.stage_set.filter(id=victim.id).exists()
         self.assertEqual(self.competition.stage_set.count(), 1)
+
+    def test_check_in_all(self):
+        self.c.force_login(self.manager)
+        comp = CompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        comp.entry_set.update(state=Entry.NOT_CHECKED_IN)
+        target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+        out = self.c.post(target, {'type': 'check_in_all'})
+        self.assertJSONEqual(out.content, {'success': True})
+        assert all(map(lambda e: e.state == Entry.CHECKED_IN, comp.entry_set.all()))
+
+    def test_check_in_all_doesnt_change_other_states(self):
+        self.c.force_login(self.manager)
+        comp = CompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        comp.entry_set.update(state=Entry.NOT_CHECKED_IN)
+        entry = comp.entry_set.first()
+        entry.state = Entry.EXCLUDED
+        entry.save()
+        target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+        out = self.c.post(target, {'type': 'check_in_all'})
+        self.assertJSONEqual(out.content, {'success': True})
+        entry.refresh_from_db()
+        self.assertEqual(entry.state, Entry.EXCLUDED)
+
+    def test_check_in(self):
+        self.c.force_login(self.manager)
+        comp = CompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        comp.entry_set.update(state=Entry.NOT_CHECKED_IN)
+        entry = comp.entry_set.first()
+        target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+        out = self.c.post(target, {'type': 'check_in',
+                                   'id': entry.id})
+        self.assertJSONEqual(out.content, {'success': True})
+        entry.refresh_from_db()
+        self.assertEqual(entry.state, Entry.CHECKED_IN)
+
+    def test_check_in_doesnt_change_other_states(self):
+        self.c.force_login(self.manager)
+        comp = CompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        entry = comp.entry_set.first()
+        for state in [Entry.EXCLUDED, Entry.CHECKED_IN, Entry.DID_NOT_FINISH]:
+            entry.state = state
+            entry.save()
+            target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+            out = self.c.post(target, {'type': 'check_in',
+                                       'id': entry.id})
+            self.assertJSONEqual(out.content, {'success': False,
+                                               'reason': 'already_checked_in',
+                                               'verbose_reason': 'That entry has already checked in'})
+            entry.refresh_from_db()
+            self.assertEqual(entry.state, state)
+
+    def test_check_in_entry_not_in_competition(self):
+        self.c.force_login(self.manager)
+        comp = CompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
+        entry = CompetitionOfSize(entries__num_of_entries=8).entry_set.first()
+        target = reverse('main/competition_endpoint', kwargs={'comp_id': comp.id})
+        out = self.c.post(target, {'type': 'check_in',
+                                   'id': entry.id})
+        self.assertEqual(out.status_code, 404)
 
     def test_post_bad_type(self):
         self.c.force_login(self.manager)

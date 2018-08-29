@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
-from main.models import Competition, Stage, Club
+from main.models import Competition, Stage, Entry
 from main.utils.api_responses import api_failure, api_success
 # TODO add way of rolling back the most recently finished stage to correct results (set locked after next stage starts (Use on save))
 
@@ -25,6 +25,10 @@ def handle_post(request, comp):
         return delete_stage(request, comp)
     elif r_type == "entry_csv":
         return entry_csv(request, comp)
+    elif r_type == "check_in_all":
+        return check_in_all(comp)
+    elif r_type == "check_in":
+        return check_in(request, comp)
     else:
         out = {'success': False,
                'reason': 'post type not recognised'}
@@ -118,3 +122,28 @@ def entry_csv(request, comp):
     out = {'success': True,
            'added_count': len(data)}
     return JsonResponse(out)
+
+
+def check_in_all(comp):
+    """ Check in all Un-Checked in entries of a competition
+
+    :param Competition comp: Competition to check in entries for
+    """
+    comp.entry_set.filter(state=Entry.NOT_CHECKED_IN).update(state=Entry.CHECKED_IN)
+    return api_success()
+
+
+def check_in(request, comp):
+    """ Check in a single entry
+
+    :param request: expecting POST parameters:\n
+        :param int id: id of the stage to delete
+    :param comp: Competition to check in entry for
+    :return:
+    """
+    entry = get_object_or_404(Entry, pk=request.POST['id'], competition=comp)
+    if entry.state != Entry.NOT_CHECKED_IN:
+        return api_failure('already_checked_in', _('That entry has already checked in'))
+    entry.state = Entry.CHECKED_IN
+    entry.save()
+    return api_success()
