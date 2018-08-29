@@ -32,4 +32,7 @@ class Competition(models.Model):
                 club = club.first()
             else:
                 club = Club.objects.create(name=club_name)
-        return self.entry_set.get_or_create(competitor=competitor, club=club)[0]
+        entry = self.entry_set.get_or_create(competitor=competitor)[0]
+        entry.club = club
+        entry.save()
+        return entry

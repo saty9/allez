@@ -5,7 +5,7 @@ from django.test import TestCase
 from main.models import Competition, Club
 
 
-class TestAddStage(TestCase):
+class TestCompetition(TestCase):
 
     def setUp(self):
         self.competition = BaseCompetitionFactory()  # type: Competition
@@ -43,3 +43,14 @@ class TestAddStage(TestCase):
         self.assertEqual(e.club, club)
         self.assertEqual(e.competitor, c1)
         self.assertEqual(e.competition, self.competition)
+
+    def test_add_entry_same_competitor_twice(self):
+        c1 = CompetitorFactory(organisation=self.org)
+        club1 = ClubFactory()
+        club2 = ClubFactory()
+        e = self.competition.add_entry(c1.license_number, c1.name, club1.name)
+        e = self.competition.add_entry(c1.license_number, c1.name, club2.name)
+        self.assertEqual(e.club, club2)
+        self.assertEqual(e.competitor, c1)
+        self.assertEqual(e.competition, self.competition)
+        self.assertEqual(self.competition.entry_set.count(), 1)
