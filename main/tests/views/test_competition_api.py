@@ -266,6 +266,29 @@ class TestCompetitionAPI(TestCase):
                                    'id': entry.id})
         self.assertEqual(out.status_code, 404)
 
+    def test_add_entry(self):
+        self.c.force_login(self.manager)
+        c = CompetitorFactory(organisation=self.competition.organisation)
+        club = ClubFactory()
+        out = self.c.post(self.target, {'type': 'add_entry',
+                                        'name': c.name,
+                                        'license_number': c.license_number,
+                                        'club_name': club.name})
+        self.assertJSONEqual(out.content, {'success': True})
+        assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.NOT_CHECKED_IN).exists()
+
+    def test_add_entry_auto_checkin(self):
+        self.c.force_login(self.manager)
+        c = CompetitorFactory(organisation=self.competition.organisation)
+        club = ClubFactory()
+        out = self.c.post(self.target, {'type': 'add_entry',
+                                        'name': c.name,
+                                        'license_number': c.license_number,
+                                        'club_name': club.name,
+                                        'check_in': True})
+        self.assertJSONEqual(out.content, {'success': True})
+        assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.CHECKED_IN).exists()
+
     def test_post_bad_type(self):
         self.c.force_login(self.manager)
         out = self.c.post(self.target, {'type': 'anything_else'})

@@ -5,6 +5,8 @@ from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
 from main.models import Competition, Stage, Entry
 from main.utils.api_responses import api_failure, api_success
+
+
 # TODO add way of rolling back the most recently finished stage to correct results (set locked after next stage starts (Use on save))
 
 
@@ -29,6 +31,8 @@ def handle_post(request, comp):
         return check_in_all(comp)
     elif r_type == "check_in":
         return check_in(request, comp)
+    elif r_type == "add_entry":
+        return add_entry(request, comp)
     else:
         out = {'success': False,
                'reason': 'post type not recognised'}
@@ -146,4 +150,22 @@ def check_in(request, comp):
         return api_failure('already_checked_in', _('That entry has already checked in'))
     entry.state = Entry.CHECKED_IN
     entry.save()
+    return api_success()
+
+
+def add_entry(request, comp):
+    """ Manually add a single entry to a competition
+
+        :param request: expecting POST parameters:\n
+            :param str name: name of competitor to add
+            :param str license_number: license number of the competitor to add
+            :param str club_name: name of the club to enter competitor under
+            :param optional bool check_in: if true checks in entry at same time
+        :param Competition comp: Competition to enter competitor into
+        :return:
+    """
+    entry = comp.add_entry(request.POST['license_number'], request.POST['name'], request.POST['club_name'])
+    if 'check_in' in request.POST and request.POST['check_in']:
+        entry.state = Entry.CHECKED_IN
+        entry.save()
     return api_success()
