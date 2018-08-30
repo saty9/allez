@@ -285,7 +285,7 @@ class TestCompetitionAPI(TestCase):
                                         'name': c.name,
                                         'license_number': c.license_number,
                                         'club_name': club.name,
-                                        'check_in': True})
+                                        'check_in': '1'})
         self.assertJSONEqual(out.content, {'success': True})
         assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.CHECKED_IN).exists()
 

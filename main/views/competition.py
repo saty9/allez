@@ -165,7 +165,7 @@ def add_entry(request, comp):
         :return:
     """
     entry = comp.add_entry(request.POST['license_number'], request.POST['name'], request.POST['club_name'])
-    if 'check_in' in request.POST and request.POST['check_in']:
+    if 'check_in' in request.POST and int(request.POST['check_in']):
         entry.state = Entry.CHECKED_IN
         entry.save()
     return api_success()
