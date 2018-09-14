@@ -18,4 +18,6 @@ class TestCullStage(TestCase):
         self.assertEqual(out, expected)
 
     def test_cull_with_tie(self):
+        """when there is a cull if fencerA is tied with fencerB
+                kand the cull boundary lies between them both must survive"""
         self.assertEqual(True, False)
