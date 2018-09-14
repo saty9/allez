@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Max
+
 from .entry import Entry
 
 
@@ -26,3 +28,27 @@ class AddStage(models.Model):
             input_entries.extend(additions)
             out = input_entries
         return out
+
+    def possible_additions(self):
+        """get entries that can be added in this stage
+
+        :return: query filtered to correct Entries
+        """
+        query = self.stage.competition.entry_set.filter(state__in=[Entry.NOT_CHECKED_IN, Entry.CHECKED_IN])
+        return query.filter(addcompetitor=None)
+
+    def add_entries(self, entries):
+        """Add entries to this stages list of entries to add
+
+        :param list of Entry entries: entries to add in the order they should be added in entries that are already set
+            to be added elsewhere will not be added to this stage
+        """
+        sequence_num = 1
+        if self.addcompetitor_set.exists():
+            sequence_num = self.addcompetitor_set.aggregate(Max('sequence'))['sequence__max']
+
+        for entry in entries:
+            if entry.addcompetitor_set.exists():
+                continue
+            self.addcompetitor_set.create(entry=entry, sequence=sequence_num)
+            sequence_num += 1

@@ -1,6 +1,6 @@
 from ..factories.competition_factory import CompetitionOfSize
 from django.test import TestCase
-from main.models import Stage, AddStage
+from main.models import Stage, AddStage, Entry
 
 
 class TestAddStage(TestCase):
@@ -66,3 +66,64 @@ class TestAddStage(TestCase):
         ordered_competitors = add_stage.ordered_competitors()
         self.assertEqual(len(ordered_competitors), len(entry_set))
         self.assertEqual(ordered_competitors, list(entry_set[1:]) + [entry_set[0]])
+
+    def test_possible_additions_base(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.NOT_STARTED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = self.competition.entry_set.all()
+        self.assertSetEqual(set(expected), set(add_stage.possible_additions()))
+
+    def test_possible_additions_entry_with_bad_state(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.NOT_STARTED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        e = expected[0]
+        expected = expected[1:]
+        for s in [Entry.DID_NOT_FINISH, Entry.DID_NOT_START, Entry.EXCLUDED]:
+            e.state = s
+            e.save()
+            self.assertSetEqual(set(expected), set(add_stage.possible_additions()))
+
+    def test_possible_additions_entry_already_added(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.NOT_STARTED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        e = expected[0]
+        expected = expected[1:]
+        add_stage.addcompetitor_set.create(entry=e, sequence=0)
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.NOT_STARTED, number=1)
+        add_stage = stage.addstage_set.first()
+        self.assertSetEqual(set(expected), set(add_stage.possible_additions()))
+
+    def test_add_entries_base(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        add_stage.add_entries(expected)
+        self.assertListEqual(expected, stage.ordered_competitors())
+
+    def test_add_entries_entry_already_added_elsewhere(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        e = expected[-1]
+        add_stage.add_entries([e])
+        self.assertListEqual([e], stage.ordered_competitors())
+
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=1)
+        add_stage = stage.addstage_set.first()
+        add_stage.add_entries(expected)
+        self.assertListEqual(expected, stage.ordered_competitors())
+        self.assertListEqual(expected[:-1], list(map(lambda x: x.entry, add_stage.addcompetitor_set.all())))
+
+    def test_add_entries_sequence_already_exists(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        e = expected[0]
+        expected = expected[1:]
+        add_stage.add_entries(expected)
+        self.assertListEqual(expected, stage.ordered_competitors())
+        add_stage.add_entries([e])
+        expected.append(e)
+        self.assertListEqual(expected, stage.ordered_competitors())
