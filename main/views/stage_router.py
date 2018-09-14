@@ -1,7 +1,7 @@
 from main.models import Stage
 from django.shortcuts import get_object_or_404
 from .stage_pool import pools_pdf, results, results_pdf
-from .stage_management import manage_pool_stage, manage_cull_stage, manage_de_stage
+from .stage_management import manage_pool_stage, manage_cull_stage, manage_de_stage, manage_add_stage
 
 
 def stage_router(request, stage_id):
@@ -10,8 +10,10 @@ def stage_router(request, stage_id):
         return manage_pool_stage(request, stage)
     elif stage.type == Stage.CULL:
         return manage_cull_stage(request, stage)
-    elif stage.type ==Stage.DE:
+    elif stage.type == Stage.DE:
         return manage_de_stage(request, stage)
+    elif stage.type == Stage.ADD:
+        return manage_add_stage(request, stage)
 
 
 def stage_router_pdf(request, comp_id, stage_number):
