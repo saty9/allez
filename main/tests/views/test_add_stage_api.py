@@ -88,3 +88,26 @@ class TestAddStageAPI(TestCase):
                                                'verbose_reason': 'Stage not in NOT_STARTED state'})
             self.assertEqual(self.stage.state, state)
             self.assertListEqual([], list(self.add.addcompetitor_set.values_list('entry_id', flat=True)))
+
+    def test_confirm_add_base(self):
+        self.c.force_login(self.manager)
+        self.add.add_entries(self.competition.entry_set.all())
+        self.stage.state = Stage.READY
+        self.stage.save()
+        out = self.c.post(self.target, {'type': 'confirm_add'})
+        self.stage.refresh_from_db()
+        self.assertJSONEqual(out.content, {'success': True})
+        self.assertEqual(self.stage.state, Stage.FINISHED)
+
+    def test_confirm_add_bad_state(self):
+        self.c.force_login(self.manager)
+        self.add.add_entries(self.competition.entry_set.all())
+        for state in [Stage.NOT_STARTED, Stage.STARTED, Stage.FINISHED, Stage.LOCKED]:
+            self.stage.state = state
+            self.stage.save()
+            out = self.c.post(self.target, {'type': 'confirm_add'})
+            self.stage.refresh_from_db()
+            self.assertJSONEqual(out.content, {'success': False,
+                                               'reason': "incorrect state",
+                                               'verbose_reason': 'Stage not in READY state'})
+            self.assertEqual(self.stage.state, state)

@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
-from main.models import Stage, Entry
+from main.models import Stage
 from main.utils.api_responses import api_failure, api_success
 
 
@@ -16,6 +16,8 @@ def manage_add_stage_post(request, stage):
     r_type = request.POST['type']
     if r_type == 'add_entries':
         return add_entries(request, stage)
+    elif r_type == "confirm_add":
+        return confirm_add(stage)
     else:
         return api_failure('unrecognised request')
 
@@ -38,5 +40,20 @@ def add_entries(request, stage: Stage):
         return api_failure('bad_entry', _('one of these entries has already been added or is not in this competition'))
     add_stage.add_entries(entries)
     stage.state = Stage.READY
+    stage.save()
+    return api_success()
+
+
+def confirm_add(stage: Stage):
+    """advances a stage from READY -> FINISHED
+
+    :param request: expects type: "confirm_add"
+    :param stage: Stage of type add
+    :return: JSONResponse with either success or an error message
+    """
+    if stage.state != Stage.READY:
+        return api_failure("incorrect state",
+                           _("Stage not in READY state"))
+    stage.state = Stage.FINISHED
     stage.save()
     return api_success()
