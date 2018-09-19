@@ -177,7 +177,7 @@
                 'type': 'table_complete'
             };
             let successful = function(result){
-                location.assign("{% url 'ui/manage_stage' comp.organisation.slug comp.id table.de.stage %}")
+                location.assign("{% url 'ui/manage_stage' comp.organisation.slug comp.id table.de.stage.id %}")
             };
             api_post("{% url 'main/de_table_endpoint' table.id %}", data, successful)
         }
