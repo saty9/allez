@@ -1,0 +1,133 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage Add Stage' %}{% endblock %}
+
+
+{% block body %}
+    <br>
+    <a class="btn btn-primary" data-toggle="collapse" href="#add_form_collapse" role="button" aria-expanded="false"
+       aria-controls="collapseExample">
+        {% trans 'Add Entry To Competition Manually' %}
+    </a>
+    <a class="btn btn-primary" href="{% url 'ui/check_in' stage.competition.organisation.slug stage.competition.id %}">
+        {% trans 'Open Check In' %}
+    </a>
+    <div class="collapse" id="add_form_collapse">
+        <form id="manual_add_form" class="container">
+            <div class="form-group row">
+                <label for="manual_name" class="col-form-label">
+                    {% trans 'Name:' %}
+                </label>
+                <input id="manual_name" type="text" class="form-control" required>
+            </div>
+            <div class="form-group row">
+                <label for="manual_license" class="col-form-label">
+                    {% trans 'Licence Number:' %}
+                </label>
+                <input id="manual_license" type="text" class="form-control" required>
+            </div>
+            <div class="form-group row">
+                <label for="manual_club" class="col-form-label">
+                    {% trans 'Club:' %}
+                </label>
+                <input id="manual_club" type="text" class="form-control" required>
+            </div>
+            <div class="form-group row">
+                <div class="col form-check-inline">
+                    <input id="check_in_automatically" type="checkbox" class="form-check-input">
+                    <label for="check_in_automatically" class="form-check-label ">
+                        {% trans 'Check in automatically' %}
+                    </label>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-success" onclick="submit_form()">{% trans "Add" %}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <br>
+    <h2>{% trans "Un-Added Entries" %}</h2>
+    <table class="table" id="entry_table">
+        <tr>
+            <th><input id="super_selector" type="checkbox" onchange="super_selector_change()"></th>
+            <th>{% trans 'Name' %}</th>
+            <th>{% trans 'Status' %}</th>
+        </tr>
+        {% for entry in possible_additions %}
+            <tr>
+                <td><input type="checkbox" data-entry_id="{{ entry.id }}"></td>
+                <td>{{ entry }}</td>
+                <td>{% trans entry.get_state_display %}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <button type="button" class="btn btn-primary" id="add_selected">{% trans 'Add selected entries to competition flow' %}</button>
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+        let form = $("#manual_add_form")[0];
+
+        function submit_form() {
+            if (!form.checkValidity()) {
+                // Create the temporary button, click and remove it
+                const tmpSubmit = document.createElement('button');
+                form.appendChild(tmpSubmit);
+                tmpSubmit.click();
+                form.removeChild(tmpSubmit);
+                return
+            }
+            let success = function (data) {
+                location.reload();
+            };
+            let data = {
+                'type': 'add_entry',
+                'name': $("#manual_name").val(),
+                'license_number': $("#manual_license").val(),
+                'club_name': $("#manual_club").val(),
+                'check_in': $("#check_in_automatically").prop('checked') ? 1 : 0
+            };
+            api_post('{% url 'main/competition_endpoint' stage.competition.id %}', data, success);
+        }
+
+        $("#manual_name").autocomplete({
+            source: function (req, add) {
+                $.getJSON("{% url 'main/organisation_endpoint' stage.competition.organisation.id %}?type=autocomplete_competitor", {'name': req.term}, function (data) {
+                    add(data.competitors)
+                })
+            },
+            minLength: 3,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#manual_license").val(ui.item.license_number);
+                $("#manual_club").val(ui.item.club_name);
+                $("#manual_name").val(ui.item.name);
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            return $("<li>")
+                .append("<div>" + item.name + "</div>")
+                .appendTo(ul);
+        };
+
+        $('#add_selected').click(function (){
+            let id_dict = $("td > input:checked").map(function(){return this.dataset.entry_id});
+            var ids = Object.keys(id_dict).map(function(key){
+                return id_dict[key];
+            });
+            ids = ids.slice(0,-2);
+            let success = function (data) {location.reload();};
+
+            let data = {'type': 'add_entries',
+                        'ids': ids};
+            api_post('{% url 'main/stage_endpoint' stage.id %}', $.param(data, true), success);
+        });
+
+        function super_selector_change() {
+            $("td > input[type='checkbox']").prop('checked', $("#super_selector").prop('checked'))
+        }
+
+    </script>
+{% endblock %}

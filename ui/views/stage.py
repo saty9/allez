@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rules.contrib.views import permission_required, objectgetter
 from main.models import Stage
-from .stages import manage_pool_stage, manage_cull_stage, manage_de_stage
+from .stages import manage_pool_stage, manage_cull_stage, manage_de_stage, manage_add_stage
 
 
 @login_required
@@ -19,6 +19,9 @@ def manage_stage_router(request, org_slug, comp_id, stage_id):
     elif stage.type == Stage.DE:
         de_id = stage.destage_set.first().id
         return manage_de_stage(request, de_id)
+    elif stage.type == Stage.ADD:
+        add_id = stage.addstage_set.first().id
+        return manage_add_stage(request, add_id)
     else:
         return HttpResponse("Not Implemented yet")
 

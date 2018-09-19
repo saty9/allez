@@ -16,7 +16,7 @@ def create_competition(request, org_slug):
         if form.is_valid():
             comp = org.competition_set.create(name=form.cleaned_data['name'], date=form.cleaned_data['date'])
 
-            return HttpResponseRedirect(reverse('competition', args=[org_slug, comp.id]))
+            return HttpResponseRedirect(reverse('ui/manage_competition', args=[org_slug, comp.id]))
     else:
         form = CreateCompetitionForm()
 

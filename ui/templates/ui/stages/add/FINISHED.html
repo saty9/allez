@@ -1,0 +1,46 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage Add Stage' %}{% endblock %}
+
+
+{% block body %}
+    <a class="btn btn-primary" href="{% url 'ui/check_in' stage.competition.organisation.slug stage.competition.id %}">
+        {% trans 'Open Check In' %}
+    </a>
+    <br>
+    <h2>{% trans "Seeding after this addition currently" %}</h2>
+    <table class="table" id="entry_table">
+        <tr>
+            <th>{% trans 'Name' %}</th>
+            <th>{% trans 'Status' %}</th>
+        </tr>
+        {% for entry in entries %}
+            <tr>
+                <td>{{ entry }}</td>
+                <td>{% trans entry.get_state_display %}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <h2>{% trans "These entries will fail to be added" %}</h2>
+    <table class="table" id="entry_table">
+        <tr>
+            <th>{% trans 'Name' %}</th>
+            <th>{% trans 'Status' %}</th>
+        </tr>
+        {% for entry in not_being_added %}
+            <tr>
+                <td>{{ entry }}</td>
+                <td>{% trans entry.get_state_display %}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock body %}
+
+{% block scripts %}
+    <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
+    <script>
+    </script>
+{% endblock %}
