@@ -1,0 +1,1 @@
+from .club_solver import attempt_solve
