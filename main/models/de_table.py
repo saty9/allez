@@ -62,8 +62,10 @@ class DeTable(models.Model):
 
     def make_children(self):
         """adds winners and losers tables as children of this table"""
-        assert self.children.count() == 0, "cant make children if children already exist"
-        assert self.detableentry_set.count() > 2, "trying to make a child table of a table with <= 2 entries"
+        if self.children.count() != 0:
+            raise AssertionError("cant make children if children already exist")
+        if self.detableentry_set.count() <= 2:
+            raise RuntimeError("trying to make a child table of a table with <= 2 entries")
         for e in self.detableentry_set.all():
             if not (e.victory or e.against().victory):
                 raise UnfinishedTableException('cannot make child tables until all fights in this table are completed')

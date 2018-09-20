@@ -17,7 +17,8 @@ class DeStage(models.Model):
 
     def start(self):
         """sets up a DE by creating the first table and seeding it with entries and null entries for byes"""
-        assert not self.detable_set.exists(), "cant start already running DE"
+        if self.detable_set.exists():
+            raise AssertionError("cant start already running DE")
         entries = self.stage.input()
         entries_length = len(entries)
         table = self.detable_set.create(parent=None)

@@ -80,9 +80,10 @@ class PoolStage(models.Model):
                 fencers.append(self.Fencer(b, v, ts, tr, f.entry))
         if self.carry_previous_results:
             previous_stage = self.stage.competition.stage_set.get(number=self.stage.number - 1)
-            assert previous_stage.type == previous_stage.POOL,\
-                "Cannot carry results forward if previous stage was not a pool"
-            assert previous_stage.poolstage_set.first(), "PoolStage for previous stage missing"
+            if previous_stage.type != previous_stage.POOL:
+                raise AssertionError("Cannot carry results forward if previous stage was not a pool")
+            if not previous_stage.poolstage_set.first():
+                raise AssertionError("PoolStage for previous stage missing")
 
             old_results = previous_stage.poolstage_set.first().results()
             out = []
