@@ -38,7 +38,8 @@ def generate_pools(request, stage):
         return api_success()
     else:
         return api_failure("invalid pool size",
-                           _('produces pools with less than 3 or more than ') + str(MAX_POOL_SIZE) + _(' fencers'))
+                           _('produces pools with less than 3 or more than %(max_pool_size)i fencers') %
+                           {'max_pool_size': MAX_POOL_SIZE})
 
 
 @permission_required_json('main.manage_competition', fn=direct_object)

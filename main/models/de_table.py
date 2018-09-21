@@ -19,13 +19,14 @@ class DeTable(models.Model):
                               8: _("QuarterFinal")}
             table_size = self.detableentry_set.count()
             # Translators: title for a de table e.g. Table of 64
-            return special_titles.get(table_size, _("Table of ") + str(table_size))
+            return special_titles.get(table_size, _("Table of %(size)i") % {'size': table_size})
         elif table_size == 2:
             # Translators: title for a de table of 2 e.g. Fight for 9th
-            return _("Fight for") + " " + ordinal(max_rank)
+            return _("Fight for %(max_rank)s") % {'max_rank': ordinal(max_rank)}
         else:
             # Translators: title for a de table e.g. Fights for 9th between 8
-            return _("Fights for") + " " + ordinal(max_rank) + " " + _("between") + " " + str(table_size)
+            return _("Fights for %(max_rank)s between %(table_size)i") % {'max_rank': ordinal(max_rank),
+                                                                          'table_size': table_size}
 
     def ordered_competitors(self):
         if self.automated():
