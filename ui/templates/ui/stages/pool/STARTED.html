@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+{% block title %}{% trans 'Manage Pool Stage' %}{% endblock %}
 
 
 {% block body %}
@@ -18,7 +18,7 @@
         <tbody>
             {% for pool in pools %}
                 <tr>
-                    <td>{% trans 'Pool'%} {{ pool.number }}</td>
+                    <td>{% blocktrans %}Pool {{ pool.number }}{% endblocktrans %}</td>
                     <td>
                         {% if pool.complete %}
                             <div class="badge badge-pill badge-success">{% trans "Complete" %}</div>

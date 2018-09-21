@@ -47,7 +47,7 @@
     <div class="container">
         {% for pool in pools %}
             <div>
-                <h3>{% trans 'Pool' %} {{ pool.number }}</h3>
+                <h3>{% blocktrans %}Pool {{ pool.number }}{% endblocktrans %}</h3>
                 <div class="pool" data-source="{% url 'main/pool_endpoint'  pool.id %}" data-pool_id="{{ pool.id }}"></div>
             </div>
         {% endfor %}

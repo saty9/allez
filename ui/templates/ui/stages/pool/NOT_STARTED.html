@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans 'Manage' %} {% trans 'Pool Stage' %}{% endblock %}
+{% block title %}{% trans 'Manage Pool Stage' %}{% endblock %}
 
 
 {% block body %}
@@ -127,22 +127,22 @@
             }
             let numOfPoules = num_pools_1 + num_pools_2;
             //Show results of the above.
-            display_distribution(num_fencers_1, num_pools_1, num_fencers_2, num_pools_2)
+            display_distribution(num_fencers_1, num_pools_1, num_fencers_2, num_pools_2);
             return numOfPoules
         }
 
         function display_distribution(num_fencers_1, num_pools_1, num_fencers_2, num_pools_2){
             var out = "";
             if (num_pools_1 > 1) {
-                out = num_pools_1 + "{% trans " pools of " %}" + num_fencers_1;
+                out = {% trans 'num_pools_1 + " pools of " + num_fencers_1' context "js statement"%};
             } else {
-                out = num_pools_1 + "{% trans " pool of " %}" + num_fencers_1;
+                out = {% trans 'num_pools_1 + " pool of " + num_fencers_1' context "js statement"%};
             }
             if (num_pools_2) {
                 if (num_pools_2 > 1){
-                    out += "{% trans " and " %}" + num_pools_2 + "{% trans " pools of " %}" + num_fencers_2;
+                    out += {% trans '" and " + num_pools_2 + " pools of " + num_fencers_2' context "js statement" %};
                 } else {
-                    out += "{% trans " and " %}" + num_pools_2 + "{% trans " pools of " %}" + num_fencers_2;
+                    out += {% trans '" and " + num_pools_2 + " pool of " + num_fencers_2' context "js statement" %};
                 }
             }
             $('#calculation_result').html(out)
