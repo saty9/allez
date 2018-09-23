@@ -6,7 +6,7 @@
 
 {% block body %}
     <h1>{{ org.name }}</h1>
-
+    <a class="btn btn-primary" href="{% url 'ui/org/competitions' org.slug %}">{% trans 'Competitions' %}</a>
     <h2>{% trans "Members" %}</h2>
     <ul class="list-group">
         {% for member in full_members %}
