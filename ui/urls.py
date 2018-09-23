@@ -17,7 +17,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('hi', views.test),
+    path('organisation/list', views.organisation_list, name='ui/organisation/list'),
     path('change_org/', views.change_org, name='ui/change_org'),
     path('dt/pool/<int:pool_id>', views.dt_manage_pool, name='ui/dt_manage_pool'),
     path('dt/de/<int:de_table_id>', views.dt_manage_de_table, name='ui/dt_manage_de'),

@@ -13,3 +13,16 @@ def organisation(request, org_slug):
                                                                  'full_members': full_members,
                                                                  'applicants': applicants,
                                                                  'can_manage': can_manage})
+
+
+def organisation_list(request):
+    orgs = Organisation.objects
+    if request.user.is_active:
+        user_orgs = request.user.organisationmembership_set.values_list('organisation', flat=True)
+        other_orgs = orgs.exclude(pk__in=user_orgs)
+        user_orgs = orgs.filter(pk__in=user_orgs)
+    else:
+        user_orgs = []
+        other_orgs = orgs.all()
+    return render(request, 'ui/organisation/list.html', context={'user_orgs': user_orgs,
+                                                                 'other_orgs': other_orgs})
