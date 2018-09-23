@@ -7,6 +7,7 @@ class LoginUser(LoginView):
     def form_valid(self, form):
         user = form.get_user()
         if user.is_authenticated and not user.is_superuser:
-            self.request.session['org_id'] = user.organisationmembership_set.order_by('last_active').first()\
-                .organisation_id
+            if user.organisationmembership_set.exists():
+                self.request.session['org_id'] = user.organisationmembership_set.order_by('last_active').first()\
+                    .organisation_id
         return super(LoginUser, self).form_valid(form)
