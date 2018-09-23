@@ -26,7 +26,8 @@ def create_competition(request, org_slug):
 def list_competitions(request, org_slug):
     org = get_object_or_404(Organisation, slug=org_slug)
     comps = org.competition_set.all()
-    return render(request, 'ui/competition/list.html', {'competitions': comps})
+    return render(request, 'ui/competition/list.html', {'competitions': comps,
+                                                        'org': org})
 
 
 @login_required

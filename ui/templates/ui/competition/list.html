@@ -1,13 +1,38 @@
 {%  extends 'ui/base.html' %}
-{% load static %}
 {% load i18n %}
+{% load rules %}
+
+
 
 {% block title %}Competitions{% endblock %}
 
 {% block body %}
+
+    {% if user.is_active %}
+        {% has_perm 'main.create_competition' user org as can_create_comp %}
+        {# TODO: Fix this its super hacky #}
+        {% if competitions %}
+            {% has_perm 'main.manage_competition' user competitions.0 as can_manage_comp %}
+        {% endif %}
+    {% endif %}
+
+    <br>
+
+    {% if can_create_comp %}
+        <a href="{% url 'ui/create_competition' org.slug %}" class="btn btn-primary">{% trans 'Create new Competition' %}</a>
+    {% endif %}
+    <br>
+    <h2>{% trans 'Competitions' %}</h2>
     <table>
     {% for comp in competitions %}
-        <tr><td>{{ comp.name }}</td></tr>
+        <tr>
+            <td>{{ comp.name }}</td>
+            <td>
+                {% if can_manage_comp %}
+                    <a href="{% url 'ui/manage_competition' org.slug comp.id%}" class="btn btn-secondary">{% trans 'Manage' %}</a>
+                {% endif %}
+            </td>
+        </tr>
     {% endfor %}
     </table>
 {% endblock %}
