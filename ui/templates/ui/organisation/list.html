@@ -25,7 +25,7 @@
                 <td>{{ org.name }}</td>
                 <td>
                     {% if user.is_active %}
-                        <button type="button" class="btn btn-primary" onclick="send_application({{ org.id }})">{% trans 'Apply' %}</button>
+                        <button type="button" class="btn btn-primary" onclick="send_application('{% url 'main/organisation_endpoint' org.id %}')">{% trans 'Apply' %}</button>
                     {% endif %}
                 </td>
             </tr>
@@ -36,11 +36,11 @@
 {% block scripts %}
     <script src="{% static 'ui/scripts/api_ajax.js' %}"></script>
     <script>
-        function send_application(org_id){
+        function send_application(target){
             let data = {'user_id': {{ user.id }},
                 'type': 'join_request'};
             let success = function (data) {location.reload();};
-            api_post('/main/organisation/' + org_id,data,success)
+            api_post(target, data,success)
         }
     </script>
 {% endblock %}
