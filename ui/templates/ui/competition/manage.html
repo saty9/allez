@@ -1,4 +1,4 @@
-{%  extends 'ui/base.html' %}
+{% extends 'ui/base.html' %}
 {% load static %}
 {% load i18n %}
 {# Translators: As in Manage Competition X #}
@@ -23,9 +23,15 @@
         </form>
     </dialog>
     <h1>{{ competition.name }}</h1>
-    <table  class="table">
+    <table class="table">
         <tr>
-            <th></th>
+            <th>
+                {% if not stages %}
+                    <button class="btn btn-link" onclick="add_stage_button_press(0)">
+                        <i class="fas fa-plus-square"></i><i class="fas fa-level-down-alt"></i>
+                    </button>
+                {% endif %}
+            </th>
             <th>{% trans 'Stage ' %}</th>
             <th>{% trans 'Type' %}</th>
             <th></th>
@@ -55,7 +61,7 @@
                 </td>
             </tr>
         {% endfor %}
-    </tbody>
+        </tbody>
     </table>
     <h2>{% trans 'Entries' %}</h2>
     {% if entries %}
@@ -69,23 +75,23 @@
             <label>Upload CSV file</label>
             <input id="csv-upload" type="file" onchange="csv_file_selected()">
         </form>
-    {%  endif %}
+    {% endif %}
     <h2>{% trans 'Referees' %}</h2>
     <ul>
-    {% for referee in referees %}
-        <li>{{ referee.user.name }}</li>
-    {% endfor %}
+        {% for referee in referees %}
+            <li>{{ referee.user.name }}</li>
+        {% endfor %}
     </ul>
 {% endblock %}
 {% block scripts %}
-    <script src="{% static 'dialog-polyfill/dialog-polyfill.js'  %}"></script>
+    <script src="{% static 'dialog-polyfill/dialog-polyfill.js' %}"></script>
     <script>
-        function add_stage_button_press(number){
+        function add_stage_button_press(number) {
             var dialog = $('#dialog-add-stage')[0];
             var submit_btn = $('#d_submit');
 
             submit_btn.off('click');
-            submit_btn.click(function(){
+            submit_btn.click(function () {
                 var type = $('#type-select').val();
                 add_stage(number, type)
             });
@@ -93,19 +99,21 @@
             dialogPolyfill.registerDialog(dialog);
             dialog.showModal();
         }
-        function dialog_cancel_press(){
+
+        function dialog_cancel_press() {
 
         }
-        function delete_stage_button_press(id){
-            if (confirm('{% trans 'Delete Stage?' %}')){
+
+        function delete_stage_button_press(id) {
+            if (confirm('{% trans 'Delete Stage?' %}')) {
                 var csrftoken = $("[name=csrfmiddlewaretoken]").val();
                 $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                }
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
                 });
                 $.ajax({
-                    type:'POST',
+                    type: 'POST',
                     url: '{% url 'main/competition_endpoint' competition.id %}',
                     data: {
                         'type': 'delete_stage',
@@ -118,31 +126,32 @@
                         } else {
                             $('#main-content').prepend(
                                 '<div class="alert alert-danger" role="alert">' +
-                            'There was a problem deleting the stage' +
-                            '</div>'
+                                'There was a problem deleting the stage' +
+                                '</div>'
                             )
                         }
                     },
                     error: function (data) {
                         console.log(data);
                         $('#main-content').prepend(
-                                '<div class="alert alert-danger" role="alert">' +
+                            '<div class="alert alert-danger" role="alert">' +
                             'There was a problem deleting the stage' +
                             '</div>'
-                            )
+                        )
                     }
                 })
             }
         }
-        function add_stage(number, type){
+
+        function add_stage(number, type) {
             var csrftoken = $("[name=csrfmiddlewaretoken]").val();
             $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
             });
             $.ajax({
-                type:'POST',
+                type: 'POST',
                 url: '{% url 'main/competition_endpoint' competition.id %}',
                 data: {
                     'type': 'add_stage',
@@ -156,22 +165,23 @@
                     } else {
                         $('#main-content').prepend(
                             '<div class="alert alert-danger" role="alert">' +
-                        'There was a problem adding a stage' +
-                        '</div>'
+                            'There was a problem adding a stage' +
+                            '</div>'
                         )
                     }
                 },
                 error: function (data) {
                     console.log(data);
                     $('#main-content').prepend(
-                            '<div class="alert alert-danger" role="alert">' +
+                        '<div class="alert alert-danger" role="alert">' +
                         'There was a problem adding a stage' +
                         '</div>'
-                        )
+                    )
                 }
             })
 
         }
+
         function csv_file_selected() {
             var file = $('#csv-upload')[0].files[0];
             data = new FormData();
@@ -180,9 +190,9 @@
 
             var csrftoken = $("[name=csrfmiddlewaretoken]").val();
             $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
             });
             $.ajax({
                 url: '{% url 'main/competition_endpoint' competition.id %}',
@@ -192,14 +202,14 @@
                 dataType: 'json',
                 processData: false,
                 contentType: false,
-                success: function(data) {
-                    if (data['success']){
+                success: function (data) {
+                    if (data['success']) {
                         location.reload()
                     } else {
                         console.log(data)
                     }
                 },
-                error: function(data) {
+                error: function (data) {
 
                 }
             });
