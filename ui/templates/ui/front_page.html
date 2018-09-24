@@ -1,0 +1,21 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage Cull Stage' %}{% endblock %}
+
+{% block styles %}
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="jumbotron">
+            <h1 class="display-4">Allez</h1>
+            <p class="lead">An open source fencing competition management solution</p>
+            <hr class="my-4">
+            <p>Log in to get started</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'login' %}?next={% url 'ui/organisation/list' %}"
+               role="button">Login</a>
+        </div>
+    </div>
+{% endblock body %}

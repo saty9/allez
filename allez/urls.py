@@ -19,8 +19,8 @@ from ui.views import LoginUser
 
 urlpatterns = [
     path('main/', include('main.urls')),
-    path('ui/', include('ui.urls')),
     path('accounts/login/', LoginUser.as_view(), name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
+    path('', include('ui.urls')),
 ]
