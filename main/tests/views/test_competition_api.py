@@ -34,11 +34,11 @@ class TestCompetitionAPI(TestCase):
         self.c.force_login(self.manager)
         entries = []
         entry_vals = []
-        for _ in range(8):
+        for x in range(8):
             competitor = CompetitorFactory.build()
             club = ClubFactory.build()
             entries.append((competitor, club))
-            entry_vals.append((competitor.name, club.name, competitor.license_number))
+            entry_vals.append((competitor.name, club.name, competitor.license_number, x))
         f = StringIO()
         csv.writer(f).writerows(entry_vals)
         f.seek(0)
@@ -49,24 +49,26 @@ class TestCompetitionAPI(TestCase):
         self.assertEqual(len(entries), self.competition.entry_set.count())
         self.assertEqual(list(self.competition.stage_set.values('type', 'state')), [{'type': Stage.ADD,
                                                                                      'state': Stage.NOT_STARTED}])
-        created_entries = self.competition.entry_set.all().values_list('competitor__name',
-                                                                       'club__name',
-                                                                       'competitor__license_number')
+        created_entries = self.competition.entry_set.order_by('seed').values_list('competitor__name',
+                                                                                  'club__name',
+                                                                                  'competitor__license_number',
+                                                                                  'seed')
         self.assertEqual(entry_vals, list(created_entries))
 
     def test_entry_csv_file_upload_add_stage_already_exists(self):
         comp = PreAddedCompetitionOfSize(entries__num_of_entries=8, organisation=self.competition.organisation)
         self.c.force_login(self.manager)
-        entry_vals = list(comp.entry_set.all().values_list('competitor__name',
-                                                                       'club__name',
-                                                                       'competitor__license_number'))
+        entry_vals = list(comp.entry_set.order_by('competitor').values_list('competitor__name',
+                                                                            'club__name',
+                                                                            'competitor__license_number',
+                                                                            'seed'))
         vals_to_add = []
         adding = 8
-        for _ in range(adding):
+        for x in range(adding):
             competitor = CompetitorFactory.build()
             club = ClubFactory.build()
-            vals_to_add.append((competitor.name, club.name, competitor.license_number))
-        entry_vals.extend(vals_to_add)
+            vals_to_add.append((competitor.name, club.name, competitor.license_number, x+8))
+        entry_vals = vals_to_add + entry_vals
         f = StringIO()
         csv.writer(f).writerows(vals_to_add)
         f.seek(0)
@@ -77,21 +79,22 @@ class TestCompetitionAPI(TestCase):
                                            'added_count': adding})
         self.assertEqual(len(entry_vals), comp.entry_set.count())
         self.assertEqual(comp.stage_set.filter(type=Stage.ADD).count(), 2)
-        created_entries = comp.entry_set.all().values_list('competitor__name',
-                                                                       'club__name',
-                                                                       'competitor__license_number')
+        created_entries = comp.entry_set.order_by('seed', 'competitor').values_list('competitor__name',
+                                                                                    'club__name',
+                                                                                    'competitor__license_number',
+                                                                                    'seed')
         self.assertEqual(entry_vals, list(created_entries))
 
     def test_entry_csv_file_upload_repeated_club(self):
         self.c.force_login(self.manager)
         entries = []
         entry_vals = []
-        for _ in range(8):
+        for x in range(8):
             competitor = CompetitorFactory.build()
             club = ClubFactory.build()
             entries.append((competitor, club))
-            entry_vals.append((competitor.name, club.name, competitor.license_number))
-        entry_vals[0] = (entry_vals[0][0], entry_vals[1][1], entry_vals[0][2])
+            entry_vals.append((competitor.name, club.name, competitor.license_number, x))
+        entry_vals[0] = (entry_vals[0][0], entry_vals[1][1], entry_vals[0][2], entry_vals[0][3])
         f = StringIO()
         csv.writer(f).writerows(entry_vals)
         f.seek(0)
@@ -101,9 +104,10 @@ class TestCompetitionAPI(TestCase):
                                            'added_count': len(entries)})
         self.assertEqual(len(entries), self.competition.entry_set.count())
         self.assertEqual(len(entries) - 1, Club.objects.count())
-        created_entries = self.competition.entry_set.all().values_list('competitor__name',
-                                                                       'club__name',
-                                                                       'competitor__license_number')
+        created_entries = self.competition.entry_set.order_by('seed').values_list('competitor__name',
+                                                                                  'club__name',
+                                                                                  'competitor__license_number',
+                                                                                  'seed')
         self.assertEqual(entry_vals, list(created_entries))
 
     def test_entry_csv_file_upload_no_entries(self):
@@ -120,7 +124,7 @@ class TestCompetitionAPI(TestCase):
     def test_entry_csv_file_upload_column_errors(self):
         self.c.force_login(self.manager)
         f = StringIO()
-        csv.writer(f).writerows([['name', 'club', 'license', 'might show up'], ['a', 'b', 'c', 'd']])
+        csv.writer(f).writerows([['name', 'club', 'license', 999, 'might show up'], ['a', 'b', 'c', 'd']])
         f.seek(0)
         out = self.c.post(self.target, {'type': 'entry_csv',
                                         'file': f})
@@ -135,6 +139,26 @@ class TestCompetitionAPI(TestCase):
         self.assertJSONEqual(out.content, {'success': False,
                                            'reason': 'row_column_error',
                                            'verbose_reason': 'Unexpected number of rows/columns in uploaded file'})
+        self.assertEqual(0, self.competition.entry_set.count())
+
+    def test_entry_csv_file_upload_bad_seed(self):
+        self.c.force_login(self.manager)
+        entries = []
+        entry_vals = []
+        for x in range(8):
+            competitor = CompetitorFactory.build()
+            club = ClubFactory.build()
+            entries.append((competitor, club))
+            entry_vals.append((competitor.name, club.name, competitor.license_number, x))
+        entry_vals[3] = (entry_vals[3][0], entry_vals[3][1], entry_vals[3][2], "hi")
+        f = StringIO()
+        csv.writer(f).writerows(entry_vals)
+        f.seek(0)
+        out = self.c.post(self.target, {'type': 'entry_csv',
+                                        'file': f})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'seed_parse_error',
+                                           'verbose_reason': 'one of the seeds could not be interpreted as a number'})
         self.assertEqual(0, self.competition.entry_set.count())
 
     def test_add_stage_base(self):
@@ -273,9 +297,35 @@ class TestCompetitionAPI(TestCase):
         out = self.c.post(self.target, {'type': 'add_entry',
                                         'name': c.name,
                                         'license_number': c.license_number,
+                                        'club_name': club.name,
+                                        'seed': 1})
+        self.assertJSONEqual(out.content, {'success': True})
+        assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.NOT_CHECKED_IN, seed=1).exists()
+
+    def test_add_entry_no_seed(self):
+        self.c.force_login(self.manager)
+        c = CompetitorFactory(organisation=self.competition.organisation)
+        club = ClubFactory()
+        out = self.c.post(self.target, {'type': 'add_entry',
+                                        'name': c.name,
+                                        'license_number': c.license_number,
                                         'club_name': club.name})
         self.assertJSONEqual(out.content, {'success': True})
-        assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.NOT_CHECKED_IN).exists()
+        assert self.competition.entry_set.filter(competitor=c, club=club, state=Entry.NOT_CHECKED_IN, seed=999).exists()
+
+    def test_add_entry_bad_seed(self):
+        self.c.force_login(self.manager)
+        c = CompetitorFactory(organisation=self.competition.organisation)
+        club = ClubFactory()
+        out = self.c.post(self.target, {'type': 'add_entry',
+                                        'name': c.name,
+                                        'license_number': c.license_number,
+                                        'club_name': club.name,
+                                        'seed': 'hi'})
+        self.assertJSONEqual(out.content, {'success': False,
+                                           'reason': 'seed_parse_error',
+                                           'verbose_reason': 'one of the seeds could not be interpreted as a number'})
+        self.assertFalse(self.competition.entry_set.exists())
 
     def test_add_entry_auto_checkin(self):
         self.c.force_login(self.manager)
