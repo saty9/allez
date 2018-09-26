@@ -22,6 +22,39 @@
             </menu>
         </form>
     </dialog>
+    <div id="csv_help_modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans 'CSV file upload help' %}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {% static 'ui/demo_files/demo_entry_data.csv' as demo_csv %}
+                    {% blocktrans %}
+                        <p>
+                            CSV file's row's should be in the format:
+                        </p>
+                        <p>
+                            "competitor name","club name","licence number",seed
+                        </p>
+                        <p>
+                            <a href="{{ demo_csv }}">Here</a> is an example csv file
+                        </p>
+                        Notes:
+                        <ul>
+                            <li>licence numbers must be unique and less than 12 characters long</li>
+                            <li>Seeds can be the same</li>
+                            <li>Seeds do not need to be in order or contiguous</li>
+                            <li>To convert from ranking points to seed lazily just make all ranking points negative and use them as a seed</li>
+                        </ul>
+                    {% endblocktrans %}
+                </div>
+            </div>
+        </div>
+    </div>
     <h1>{{ competition.name }}</h1>
     <table class="table">
         <tr>
@@ -74,6 +107,9 @@
         <form>
             <label>Upload CSV file</label>
             <input id="csv-upload" type="file" onchange="csv_file_selected()">
+            <button type="button" class="btn" data-toggle="modal" data-target="#csv_help_modal">
+                <i class="fas fa-question-circle"></i>
+            </button>
         </form>
     {% endif %}
     <h2>{% trans 'Referees' %}</h2>
