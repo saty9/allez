@@ -22,6 +22,7 @@ class Entry(models.Model):
     exited_at_stage = models.ForeignKey('main.stage', on_delete=models.CASCADE, null=True, default=None)
     state = models.CharField(max_length=2, choices=states, default=NOT_CHECKED_IN)
     club = models.ForeignKey('main.Club', on_delete=models.PROTECT, null=True)
+    seed = models.IntegerField(default=999)
 
     def __str__(self):
         return "({}) - {}".format(self.club.name, self.competitor.name)
