@@ -14,10 +14,20 @@ class TestCompetition(TestCase):
     def test_add_entry_base(self):
         c1 = CompetitorFactory(organisation=self.org)
         club = ClubFactory()
+        e = self.competition.add_entry(c1.license_number, c1.name, club.name, 2)
+        self.assertEqual(e.club, club)
+        self.assertEqual(e.competitor, c1)
+        self.assertEqual(e.competition, self.competition)
+        self.assertEqual(e.seed, 2)
+
+    def test_add_entry_no_seed(self):
+        c1 = CompetitorFactory(organisation=self.org)
+        club = ClubFactory()
         e = self.competition.add_entry(c1.license_number, c1.name, club.name)
         self.assertEqual(e.club, club)
         self.assertEqual(e.competitor, c1)
         self.assertEqual(e.competition, self.competition)
+        self.assertEqual(e.seed, 999)
 
     def test_add_entry_new_club(self):
         c1 = CompetitorFactory(organisation=self.org)
@@ -48,9 +58,9 @@ class TestCompetition(TestCase):
         c1 = CompetitorFactory(organisation=self.org)
         club1 = ClubFactory()
         club2 = ClubFactory()
-        e = self.competition.add_entry(c1.license_number, c1.name, club1.name)
-        e = self.competition.add_entry(c1.license_number, c1.name, club2.name)
-        self.assertEqual(e.club, club2)
+        e = self.competition.add_entry(c1.license_number, c1.name, club1.name, 5)
+        e = self.competition.add_entry(c1.license_number, c1.name, club2.name, 2)
+        self.assertEqual(e.club, club2, "Club should be ")
         self.assertEqual(e.competitor, c1)
         self.assertEqual(e.competition, self.competition)
         self.assertEqual(self.competition.entry_set.count(), 1)

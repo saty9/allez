@@ -105,16 +105,21 @@ def entry_csv(request, comp):
 
     :param request: expecting POST parameters:\n
         :param File file: a csv file following the format:
-            name, club name, license number
+            name, club name, license number, seed
     :param Competition comp: competition to add entries to
     :return:
     """
-    expected_columns = 3
+    expected_columns = 4
     file = request.FILES['file']
     data = [row for row in csv.reader(file.read().decode("utf-8").splitlines())]
     if not data or any(map(lambda x: len(x) != expected_columns, data)):
         return api_failure('row_column_error',
                            _('Unexpected number of rows/columns in uploaded file'))
+    try:
+        data = [(n, cn, ln, int(seed)) for (n, cn, ln, seed) in data]
+    except ValueError:
+        return api_failure('seed_parse_error',
+                           _('one of the seeds could not be interpreted as a number'))
     org_competitors = comp.organisation.competitor_set
     if comp.stage_set.exists():
         number = comp.stage_set.latest().number + 1
@@ -122,7 +127,7 @@ def entry_csv(request, comp):
         number = 0
     add_stage = comp.stage_set.create(type=Stage.ADD, number=number)
     for new_entry in data:
-        comp.add_entry(new_entry[2], new_entry[0], new_entry[1])
+        comp.add_entry(new_entry[2], new_entry[0], new_entry[1], new_entry[3])
     out = {'success': True,
            'added_count': len(data)}
     return JsonResponse(out)
@@ -160,11 +165,20 @@ def add_entry(request, comp):
             :param str name: name of competitor to add
             :param str license_number: license number of the competitor to add
             :param str club_name: name of the club to enter competitor under
+            :param int seed: seed of entry being added
             :param optional bool check_in: if true checks in entry at same time
         :param Competition comp: Competition to enter competitor into
         :return:
     """
-    entry = comp.add_entry(request.POST['license_number'], request.POST['name'], request.POST['club_name'])
+    if 'seed' in request.POST:
+        try:
+            seed = int(request.POST['seed'])
+        except ValueError:
+            return api_failure('seed_parse_error',
+                               _('one of the seeds could not be interpreted as a number'))
+    else:
+        seed = 999
+    entry = comp.add_entry(request.POST['license_number'], request.POST['name'], request.POST['club_name'], seed)
     if 'check_in' in request.POST and int(request.POST['check_in']):
         entry.state = Entry.CHECKED_IN
         entry.save()

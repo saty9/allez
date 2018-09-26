@@ -39,12 +39,35 @@ class TestAddStageAPI(TestCase):
 
     def test_add_entries_base(self):
         self.c.force_login(self.manager)
-        entry_ids = list(self.competition.entry_set.values_list('pk', flat=True)[:5])
+        entry_ids = list(self.competition.entry_set.order_by('seed').values_list('pk', flat=True)[:5])
         out = self.c.post(self.target, {'type': 'add_entries', 'ids': entry_ids})
         self.stage.refresh_from_db()
         self.assertJSONEqual(out.content, {'success': True})
         self.assertEqual(self.stage.state, Stage.READY)
-        self.assertListEqual(entry_ids, list(self.add.addcompetitor_set.order_by('sequence').values_list('entry_id', flat=True)))
+        self.assertListEqual(entry_ids, list(self.add.addcompetitor_set.order_by('sequence')
+                                             .values_list('entry_id', flat=True)))
+
+    def test_add_entries_same_seed_ordering(self):
+        self.c.force_login(self.manager)
+        entry_ids = list(self.competition.entry_set.order_by('seed').values_list('pk', flat=True)[:5])
+        same_seed_ids = entry_ids[:2]
+        self.competition.entry_set.filter(pk__in=same_seed_ids).update(seed=60)
+        possible_orderings_base = [same_seed_ids, [same_seed_ids[1], same_seed_ids[0]]]
+        possible_orderings = possible_orderings_base.copy()
+        attempts = 0
+        while attempts < 10 and possible_orderings:
+            attempts += 1
+            out = self.c.post(self.target, {'type': 'add_entries', 'ids': entry_ids})
+            self.stage.refresh_from_db()
+            self.assertJSONEqual(out.content, {'success': True})
+            self.assertEqual(self.stage.state, Stage.READY)
+            ordering = list(self.add.addcompetitor_set.order_by('sequence')
+                            .filter(entry__in=same_seed_ids).values_list('entry_id', flat=True))
+            self.assertIn(ordering, possible_orderings_base)
+            possible_orderings.remove(ordering)
+            self.stage.state = Stage.NOT_STARTED
+            self.stage.save()
+            self.add.addcompetitor_set.all().delete()
 
     def test_add_entries_already_added_entry(self):
         self.c.force_login(self.manager)

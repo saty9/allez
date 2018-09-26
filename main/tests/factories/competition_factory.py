@@ -26,7 +26,7 @@ class CompetitionOfSize(BaseCompetitionFactory):
             num_of_entries = kwargs['num_of_entries']
 
         for n in range(num_of_entries):
-            EntryFactory(competition=self, organisation=self.organisation)
+            EntryFactory(competition=self, organisation=self.organisation, seed=n)
 
 
 class PreAddedCompetitionOfSize(CompetitionOfSize):

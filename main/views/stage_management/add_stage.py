@@ -24,6 +24,7 @@ def manage_add_stage_post(request, stage):
 
 def add_entries(request, stage: Stage):
     """add entries and set stage as ready
+    entries will be ordered according to their seed
 
     :param request: expecting POST parameters:\n
         :param list of int ids: list of entry ids to add
@@ -38,7 +39,7 @@ def add_entries(request, stage: Stage):
     entries = stage.competition.entry_set.filter(pk__in=ids)
     if len(entries) != len(ids) or not set(entries.all()).issubset(add_stage.possible_additions()):
         return api_failure('bad_entry', _('one of these entries has already been added or is not in this competition'))
-    add_stage.add_entries(entries)
+    add_stage.add_entries(entries.order_by('seed', '?'))
     stage.state = Stage.READY
     stage.save()
     return api_success()
