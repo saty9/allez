@@ -67,7 +67,7 @@ class TestCompetitionAPI(TestCase):
         for x in range(adding):
             competitor = CompetitorFactory.build()
             club = ClubFactory.build()
-            vals_to_add.append((competitor.name, club.name, competitor.license_number, x+8))
+            vals_to_add.append((competitor.name, club.name, competitor.license_number, x-8))
         entry_vals = vals_to_add + entry_vals
         f = StringIO()
         csv.writer(f).writerows(vals_to_add)
