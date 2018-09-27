@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
-from main.models import Competition, Stage, Entry
+from main.models import Competition, Stage, Entry, Competitor, Club
 from main.utils.api_responses import api_failure, api_success
 
 
@@ -120,7 +120,16 @@ def entry_csv(request, comp):
     except ValueError:
         return api_failure('seed_parse_error',
                            _('one of the seeds could not be interpreted as a number'))
-    org_competitors = comp.organisation.competitor_set
+    fields = [Competitor._meta.get_field('name'),
+              Club._meta.get_field('name'),
+              Competitor._meta.get_field('license_number')]
+    for index, field in enumerate(fields):
+        if any(map(lambda x: len(x[index]) > field.max_length, data)):
+            return api_failure('oversize_field_error',
+                               _('a %(model_name)s %(field_name)s was longer than %(max_len)i') %
+                               {'model_name': fields[index].model.__name__,
+                                'field_name': fields[index].name,
+                                'max_len': fields[index].max_length})
     if comp.stage_set.exists():
         number = comp.stage_set.latest().number + 1
     else:

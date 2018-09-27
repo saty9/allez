@@ -7,7 +7,7 @@ from ..factories.club_factory import ClubFactory
 from ..factories.competitor_factory import CompetitorFactory
 from django.test import TestCase, Client
 from django.urls import reverse
-from main.models import Competition, Club, Stage, Entry
+from main.models import Competition, Club, Stage, Entry, Competitor
 
 
 class TestCompetitionAPI(TestCase):
@@ -160,6 +160,32 @@ class TestCompetitionAPI(TestCase):
                                            'reason': 'seed_parse_error',
                                            'verbose_reason': 'one of the seeds could not be interpreted as a number'})
         self.assertEqual(0, self.competition.entry_set.count())
+
+    def test_entry_csv_file_upload_excess_length_param(self):
+        self.c.force_login(self.manager)
+        fields = [Competitor._meta.get_field('name'),
+                  Club._meta.get_field('name'),
+                  Competitor._meta.get_field('license_number')]
+        for x in range(3):
+            oversize_string = 'x' * (fields[x].max_length + 1)
+            entry_vals = []
+            for y in range(8):
+                competitor = CompetitorFactory.build()
+                club = ClubFactory.build()
+                entry_vals.append([competitor.name, club.name, competitor.license_number, y])
+            entry_vals[7][x] = oversize_string
+            f = StringIO()
+            csv.writer(f).writerows(entry_vals)
+            f.seek(0)
+            out = self.c.post(self.target, {'type': 'entry_csv',
+                                            'file': f})
+            self.assertJSONEqual(out.content, {'success': False,
+                                               'reason': 'oversize_field_error',
+                                               'verbose_reason': 'a {} {} was longer than {}'.format(
+                                                   fields[x].model.__name__,
+                                                   fields[x].name,
+                                                   fields[x].max_length)})
+            self.assertEqual(0, self.competition.entry_set.count())
 
     def test_add_stage_base(self):
         self.c.force_login(self.manager)
