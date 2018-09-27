@@ -1,7 +1,1 @@
-psycopg2 >= 2.7
-django > 2
-reportlab
-rules
-uwsgi
-
-factory_boy
+-r requirements/production.txt

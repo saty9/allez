@@ -1,0 +1,2 @@
+-r common.txt
+factory_boy >= 2.11
