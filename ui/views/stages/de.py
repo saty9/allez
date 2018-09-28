@@ -35,7 +35,9 @@ def manage_de_stage(request, de_stage_id):
 
 
 @login_required
-@permission_required('main.manage_competition', fn=objectgetter(DeTable, 'de_table_id'))
+@permission_required('main.manage_competition',
+                     fn=objectgetter(DeTable, 'de_table_id'),
+                     raise_exception=True)
 def dt_manage_de_table(request, de_table_id):
     de_table = get_object_or_404(DeTable, pk=de_table_id)
     context = {'table': de_table,
