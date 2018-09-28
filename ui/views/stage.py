@@ -7,7 +7,9 @@ from .stages import manage_pool_stage, manage_cull_stage, manage_de_stage, manag
 
 
 @login_required
-@permission_required('main.manage_competition', fn=objectgetter(Stage, attr_name='stage_id', field_name='pk'))
+@permission_required('main.manage_competition',
+                     fn=objectgetter(Stage, attr_name='stage_id', field_name='pk'),
+                     raise_exception=True)
 def manage_stage_router(request, org_slug, comp_id, stage_id):
     stage = get_object_or_404(Stage, pk=stage_id)
     if stage.type == Stage.POOL:
