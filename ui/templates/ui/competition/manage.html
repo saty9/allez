@@ -242,11 +242,12 @@
                     if (data['success']) {
                         location.reload()
                     } else {
-                        console.log(data)
+                        console.log(data);
+                        $('#alerts').append('<div class="alert alert-danger">' + data['verbose_reason'] + '</div>');
                     }
                 },
                 error: function (data) {
-
+                    $('#alerts').append('<div class="alert alert-danger"> {% trans 'Error communcating with server' %} </div>');
                 }
             });
         }
