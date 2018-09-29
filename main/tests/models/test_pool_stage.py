@@ -132,11 +132,9 @@ class TestPoolStage(TestCase):
         stage.state = Stage.FINISHED
         stage.save()
         first_ordering = pool_stage.ordered_competitors()
-        new_ordering = first_ordering.copy()
         x = 0
-        while new_ordering == first_ordering:
-            new_ordering = pool_stage.ordered_competitors()
-            if new_ordering != first_ordering:
+        while True:
+            if pool_stage.ordered_competitors() != first_ordering:
                 break
             elif x == 10:
                 self.fail('ordering should change if there is a draw')
@@ -147,3 +145,23 @@ class TestPoolStage(TestCase):
             expected = set(rough_expected_ordering[x*2:x*2+2])
             actual = set(first_ordering[x*2:x*2+2])
             self.assertSetEqual(expected, actual)
+
+    def test_function_ranked_competitors(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=10)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(2)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool_stage.pool_set.all()[0])
+        make_boring_results(pool_stage.pool_set.all()[1])
+        stage.state = Stage.FINISHED
+        stage.save()
+        first_ordering = pool_stage.ranked_competitors()
+        x = 0
+        while x < 4:
+            self.assertListEqual(first_ordering,
+                                 pool_stage.ranked_competitors(),
+                                 "rankings should not change on repeated runs")
+            x += 1
+        flattened_list = [e for group in first_ordering for e in group]
+        self.assertListEqual(flattened_list, list(competition.entry_set.order_by('pk').all()))
