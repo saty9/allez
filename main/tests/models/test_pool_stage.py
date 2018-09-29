@@ -4,7 +4,7 @@ from main.models import Stage, PoolStage, Competition, Pool
 
 
 def make_boring_results(pool):
-    entries = pool.poolentry_set.all()
+    entries = pool.poolentry_set.order_by('pk').all()
     for avoid_index, fencer_a in enumerate(entries):
         for fencer_b in entries[avoid_index + 1:]:
             fencer_a.fencerA_bout_set.create(fencerB=fencer_b, scoreA=5, victoryA=True)
@@ -109,3 +109,41 @@ class TestPoolStage(TestCase):
         results = pool_stage.results()
         self.assertEqual(4, results[0].V)
         self.assertEqual(20, results[0].ind())
+
+    def test_function_ordered_competitors_base(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=5)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(1)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool)
+        stage.state = Stage.FINISHED
+        stage.save()
+        self.assertListEqual(pool_stage.ordered_competitors(), list(competition.entry_set.order_by('pk').all()))
+
+    def test_function_ordered_competitors_with_draw(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=10)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(2)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool_stage.pool_set.all()[0])
+        make_boring_results(pool_stage.pool_set.all()[1])
+        stage.state = Stage.FINISHED
+        stage.save()
+        first_ordering = pool_stage.ordered_competitors()
+        new_ordering = first_ordering.copy()
+        x = 0
+        while new_ordering == first_ordering:
+            new_ordering = pool_stage.ordered_competitors()
+            if new_ordering != first_ordering:
+                break
+            elif x == 10:
+                self.fail('ordering should change if there is a draw')
+            x += 1
+        rough_expected_ordering = competition.entry_set.order_by('pk').all()
+        for x in range(5):
+            # checking that overall ordering is still correct
+            expected = set(rough_expected_ordering[x*2:x*2+2])
+            actual = set(first_ordering[x*2:x*2+2])
+            self.assertSetEqual(expected, actual)
