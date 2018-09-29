@@ -1,4 +1,4 @@
-from ..factories.competition_factory import PreAddedCompetitionOfSize
+from ..factories.competition_factory import PreAddedCompetitionOfSize, CompetitionOfSize
 from django.test import TestCase
 from main.models import Stage, PoolStage, Competition, Pool
 
@@ -67,17 +67,13 @@ class TestPoolStage(TestCase):
         f1 = PoolStage.Fencer(1, 1, 10, 5, 0)
         f2 = PoolStage.Fencer(1, 1, 5, 0, 1)
         self.assertTrue(f1 > f2, "Fallback to ts")
-        # random 3rd fallback
-        f1 = PoolStage.Fencer(1, 1, 5, 0, 0)
-        f2 = PoolStage.Fencer(1, 1, 5, 0, 1)
-        got_lt = False
-        got_gte = False
-        for x in range(20):
-            if f1 > f2:
-                got_gte = True
-            else:
-                got_lt = True
-        self.assertTrue(got_lt and got_gte, "random fallback")
+        # Entry pk 3rd fallback
+        comp = CompetitionOfSize(entries__num_of_entries=2)
+        e1 = comp.entry_set.order_by('pk').first()
+        e2 = comp.entry_set.order_by('pk').last()
+        f1 = PoolStage.Fencer(1, 1, 5, 0, e1)
+        f2 = PoolStage.Fencer(1, 1, 5, 0, e2)
+        self.assertTrue(f1 > f2, "pk fallback")
 
     def test_function_results(self):
         competition = PreAddedCompetitionOfSize(entries__num_of_entries=3)  # type: Competition

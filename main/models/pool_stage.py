@@ -1,8 +1,9 @@
 from django.db import models
-from random import getrandbits
+from random import sample
 from .pool_bout import PoolBout
 from .entry import Entry
 from main.utils.club_solver import attempt_solve
+from itertools import groupby
 
 
 class PoolStage(models.Model):
@@ -12,7 +13,14 @@ class PoolStage(models.Model):
     def ordered_competitors(self):
         """
         :return: ordered list of entries
-        :rtype: list of Entry
+        :rtype: list[Entry]
+        """
+        return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
+
+    def ranked_competitors(self):
+        """
+        :return: ordered list of list of entries (entries in a list together have the same rank)
+        :rtype: list[list[Entry]]
         """
         from .stage import Stage
         if self.stage.state in [Stage.READY, Stage.NOT_STARTED] or \
@@ -20,7 +28,10 @@ class PoolStage(models.Model):
             raise Stage.NotCompleteError("Stage not finished yet")
         results = self.results()
         results.sort(reverse=True)
-        return list(map(lambda x: x.entry, results))
+        out = []
+        for _, equal_fencers in groupby(results):
+            out.append(list(map(lambda fencer: fencer.entry, equal_fencers)))
+        return out
 
     def start(self, number_of_pools):
         """Generate the given number of pools and add entries to them
@@ -126,10 +137,10 @@ class PoolStage(models.Model):
         def __add__(self, other):
             if self.entry.id == other.entry.id:
                 return self.__class__(self.bouts + other.bouts,
-                              self.V + other.V,
-                              self.TS + other.TS,
-                              self.TR + other.TR,
-                              self.entry)
+                                      self.V + other.V,
+                                      self.TS + other.TS,
+                                      self.TR + other.TR,
+                                      self.entry)
             else:
                 ArithmeticError('cant add different fencers results')
 
@@ -141,7 +152,12 @@ class PoolStage(models.Model):
             elif self.TS != other.TS:
                 return self.TS < other.TS
             else:
-                return bool(getrandbits(1))
+                return self.entry.pk > other.entry.pk
+
+        def __eq__(self, other):
+            return self.win_percentage == other.win_percentage and \
+                   self.ind() == other.ind() and \
+                   self.TS == other.TS
 
         def __str__(self):
             return "V:{:.03}, Ind:{}, TS:{}".format(self.win_percentage, self.ind(), self.TS)
