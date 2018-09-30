@@ -40,6 +40,10 @@ class Stage(models.Model):
         elif self.type == self.DE:
             return DeStage.objects.get(stage=self).ordered_competitors()
 
+    def ranked_competitors(self):
+        if self.type == self.POOL:
+            return PoolStage.objects.get(stage=self).ranked_competitors()
+
     def input(self):
         """returns a list of entries representing the input of this stage"""
         if not Stage.objects.filter(number__lt=self.number).exists():
