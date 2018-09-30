@@ -43,13 +43,24 @@ class Stage(models.Model):
     def ranked_competitors(self):
         if self.type == self.POOL:
             return PoolStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.CULL:
+            return CullStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.ADD:
+            return AddStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.DE:
+            return DeStage.objects.get(stage=self).ranked_competitors()
 
-    def input(self):
+    def input(self, ranked=False):
         """returns a list of entries representing the input of this stage"""
         if not Stage.objects.filter(number__lt=self.number).exists():
             return []
         else:
-            return Stage.objects.get(competition_id=self.competition_id, number=self.number-1).ordered_competitors()
+            if ranked:
+                return Stage.objects.get(competition_id=self.competition_id,
+                                         number=self.number - 1).ranked_competitors()
+            else:
+                return Stage.objects.get(competition_id=self.competition_id,
+                                         number=self.number-1).ordered_competitors()
 
     def deletable(self):
         """returns whether a stage can be deleted or not"""

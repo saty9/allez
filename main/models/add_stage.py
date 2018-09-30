@@ -1,3 +1,6 @@
+from itertools import groupby
+from random import sample
+
 from django.db import models
 from django.db.models import Max
 
@@ -14,13 +17,24 @@ class AddStage(models.Model):
     run = models.BooleanField(default=False)
 
     def ordered_competitors(self):
+        return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
+
+    def ranked_competitors(self):
+        """ get ordered list of lists of entries where entries of the same ranking are in a list together
+        highest ranks first
+
+        :return:
+        :rtype: list[list[Entry]]
+        """
         from .stage import Stage
         if self.stage.state in [Stage.READY, Stage.NOT_STARTED]:
             raise Stage.NotCompleteError("Stage not finished yet")
-        input_entries = self.stage.input()
-        additions = [addition.entry
-                     for addition in self.addcompetitor_set.order_by('sequence')
-                     .exclude(entry__state=Entry.NOT_CHECKED_IN).all()]
+        input_entries = self.stage.input(ranked=True)
+        ungrouped_additions = self.addcompetitor_set.order_by('sequence')\
+            .exclude(entry__state=Entry.NOT_CHECKED_IN).values('entry', 'sequence').all()
+        additions = []
+        for _, equal_fencers in groupby(ungrouped_additions, lambda x: x['sequence']):
+            additions.append(list(map(lambda fencer: Entry.objects.get(pk=fencer['entry']), equal_fencers)))
         if self.where == self.TOP:
             additions.extend(input_entries)
             out = additions
@@ -45,7 +59,7 @@ class AddStage(models.Model):
         """
         sequence_num = 1
         if self.addcompetitor_set.exists():
-            sequence_num = self.addcompetitor_set.aggregate(Max('sequence'))['sequence__max']
+            sequence_num = self.addcompetitor_set.aggregate(Max('sequence'))['sequence__max'] + 1
 
         for entry in entries:
             if entry.addcompetitor_set.exists():
