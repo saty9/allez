@@ -8,3 +8,4 @@ class DeSeed(models.Model):
 
     class Meta:
         ordering = ['seed']
+        unique_together = [('entry', 'de')]
