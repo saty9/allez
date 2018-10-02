@@ -56,6 +56,18 @@ class TestDeStage(TestCase):
                 self.assertFalse(e.victory)
                 assert e.against().victory
 
+    def test_function_start_ranked_seed_creation(self):
+        """check it creates seeds with same values if given entries ranked the same"""
+        add_stage = self.competition.stage_set.first().addstage_set.first()
+        add_stage.addcompetitor_set.filter(sequence__lte=1).update(sequence=1)
+        self.de_stage.start()
+        expected = list(map(lambda x: (x, 1), self.competition.entry_set.order_by('seed')[0:2]
+                            .values_list('pk', flat=True)))
+        for index, entry in enumerate(self.competition.entry_set.order_by('seed')[2:]):
+            expected.append((entry.pk, index + 2))
+        actual = list(self.de_stage.deseed_set.order_by('seed', 'entry').values_list('entry', 'seed'))
+        self.assertListEqual(expected, actual)
+
     def test_function_ordered_competitors(self):
         self.de_stage.start()
         make_boring_de_results(self.de_stage)
