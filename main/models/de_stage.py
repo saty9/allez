@@ -11,8 +11,11 @@ class DeStage(models.Model):
     fight_down_to = models.IntegerField(default=1)
 
     def ordered_competitors(self):
+        return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
+
+    def ranked_competitors(self):
         try:
-            return list(map(lambda x: x.entry, self.detable_set.get(parent__isnull=True).ordered_competitors()))
+            return self.detable_set.get(parent__isnull=True).ranked_competitors()
         except UnfinishedTableException as e:
             from main.models.stage import Stage
             raise Stage.NotCompleteError(e)

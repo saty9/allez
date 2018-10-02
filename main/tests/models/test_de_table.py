@@ -104,7 +104,7 @@ class TestDeTable(TestCase):
         expected = winner_loser_table.detableentry_set.all()
         tuples = []
         for e in expected:
-            tuples.append((e, self.de_stage.deseed_set.get(entry=e.entry).seed))
+            tuples.append((e.entry, self.de_stage.deseed_set.get(entry=e.entry).seed))
         expected = list(map(lambda x: x[0], sorted(tuples, key=lambda y: y[1])))
         self.assertListEqual(expected, winner_loser_table.ordered_competitors())
 
@@ -123,7 +123,7 @@ class TestDeTable(TestCase):
         original_loser.victory = True
         original_winner.save()
         original_loser.save()
-        self.assertListEqual([original_loser, original_winner], winner_table.ordered_competitors())
+        self.assertListEqual([original_loser.entry, original_winner.entry], winner_table.ordered_competitors())
 
     def test_function_ordered_competitors_table_bigger_than_2(self):
         self.de_stage.fight_down_to = 9
@@ -134,7 +134,7 @@ class TestDeTable(TestCase):
         for e in expected:
             tuples.append((e, self.de_stage.deseed_set.get(entry=e.entry).seed))
         expected = list(map(lambda x: x[0].entry, sorted(tuples, key=lambda y: y[1])))
-        actual = list(map(lambda x: x.entry, self.head_table.ordered_competitors()))
+        actual = self.head_table.ordered_competitors()
         self.assertListEqual(expected, actual)
 
     def test_function_ordered_competitors_table_bigger_than_2_missing_children(self):
@@ -151,3 +151,16 @@ class TestDeTable(TestCase):
             winner_table.make_children()
             winner_table = winner_table.children.filter(winners=True).first()
         self.assertRaises(UnfinishedTableException, winner_table.ordered_competitors)
+
+    def test_function_ranked_competitors(self):
+        comp = PreAddedCompetitionOfSize(entries__num_of_entries=4)  # type: Competition
+        add_stage = comp.stage_set.first().addstage_set.first()
+        add_stage.addcompetitor_set.filter(sequence__gt=1).update(sequence=10)
+        de = comp.stage_set.create(number=1, type=Stage.DE).destage_set.first()  # type: DeStage
+        ranked_input = de.stage.input(ranked=True)
+        self.assertEqual(len(ranked_input[2]), 2)  # sanity check we are using expected data
+        de.start()
+        make_boring_de_results(de)
+        ranked_output = de.detable_set.filter(parent__isnull=True).first().ranked_competitors()
+        self.assertListEqual(ranked_input, ranked_output)
+
