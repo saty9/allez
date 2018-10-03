@@ -54,15 +54,16 @@ class AddStage(models.Model):
     def add_entries(self, entries):
         """Add entries to this stages list of entries to add
 
-        :param list of Entry entries: entries to add in the order they should be added in entries that are already set
-            to be added elsewhere will not be added to this stage
+        :param list[list[Entry]] entries: entries to add in the order they should be added in entries that are already
+            set to be added elsewhere will not be added to this stage
         """
         sequence_num = 1
         if self.addcompetitor_set.exists():
             sequence_num = self.addcompetitor_set.aggregate(Max('sequence'))['sequence__max'] + 1
 
-        for entry in entries:
-            if entry.addcompetitor_set.exists():
-                continue
-            self.addcompetitor_set.create(entry=entry, sequence=sequence_num)
+        for equal_entries in entries:
+            for entry in equal_entries:
+                if entry.addcompetitor_set.exists():
+                    continue
+                self.addcompetitor_set.create(entry=entry, sequence=sequence_num)
             sequence_num += 1
