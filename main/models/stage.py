@@ -20,7 +20,7 @@ class Stage(models.Model):
     STARTED = 'GO'
     FINISHED = 'FIN'
     LOCKED = 'LCK'
-    states = ((NOT_STARTED, "Not Started"),
+    states = ((NOT_STARTED, "Not Ready"),
               (READY, "Ready to Start"),
               (STARTED, "Running"),
               (FINISHED, "Finished"),
