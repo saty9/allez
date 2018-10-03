@@ -53,7 +53,7 @@ class TestAddStageAPI(TestCase):
         same_seed_ids = entry_ids[:2]
         self.competition.entry_set.filter(pk__in=same_seed_ids).update(seed=60)
         possible_orderings_base = [same_seed_ids, [same_seed_ids[1], same_seed_ids[0]]]
-        possible_orderings = possible_orderings_base.copy()
+        possible_orderings = [ordering.copy() for ordering in possible_orderings_base]
         attempts = 0
         while attempts < 10 and possible_orderings:
             attempts += 1
@@ -64,7 +64,8 @@ class TestAddStageAPI(TestCase):
             ordering = list(self.add.addcompetitor_set.order_by('sequence')
                             .filter(entry__in=same_seed_ids).values_list('entry_id', flat=True))
             self.assertIn(ordering, possible_orderings_base)
-            possible_orderings.remove(ordering)
+            if ordering in possible_orderings:
+                possible_orderings.remove(ordering)
             self.stage.state = Stage.NOT_STARTED
             self.stage.save()
             self.add.addcompetitor_set.all().delete()
@@ -74,7 +75,7 @@ class TestAddStageAPI(TestCase):
         entry_ids = list(self.competition.entry_set.values_list('pk', flat=True)[:5])
         e = self.competition.entry_set.get(pk=entry_ids[0])
         stage = self.competition.stage_set.create(state=Stage.FINISHED, type=Stage.ADD, number=0)
-        stage.addstage_set.first().add_entries([e])
+        stage.addstage_set.first().add_entries([[e]])
         out = self.c.post(self.target, {'type': 'add_entries', 'ids': entry_ids})
         self.stage.refresh_from_db()
         self.assertJSONEqual(out.content, {'success': False,
@@ -114,7 +115,7 @@ class TestAddStageAPI(TestCase):
 
     def test_confirm_add_base(self):
         self.c.force_login(self.manager)
-        self.add.add_entries(self.competition.entry_set.all())
+        self.add.add_entries(map(lambda x: [x], self.competition.entry_set.all()))
         self.stage.state = Stage.READY
         self.stage.save()
         out = self.c.post(self.target, {'type': 'confirm_add'})
@@ -124,7 +125,7 @@ class TestAddStageAPI(TestCase):
 
     def test_confirm_add_bad_state(self):
         self.c.force_login(self.manager)
-        self.add.add_entries(self.competition.entry_set.all())
+        self.add.add_entries(map(lambda x: [x], self.competition.entry_set.all()))
         for state in [Stage.NOT_STARTED, Stage.STARTED, Stage.FINISHED, Stage.LOCKED]:
             self.stage.state = state
             self.stage.save()

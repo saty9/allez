@@ -1,3 +1,4 @@
+from itertools import groupby
 from django.http import HttpResponse
 from django.utils.translation import gettext as _
 from main.helpers.permissions import permission_required_json, direct_object
@@ -39,7 +40,11 @@ def add_entries(request, stage: Stage):
     entries = stage.competition.entry_set.filter(pk__in=ids)
     if len(entries) != len(ids) or not set(entries.all()).issubset(add_stage.possible_additions()):
         return api_failure('bad_entry', _('one of these entries has already been added or is not in this competition'))
-    add_stage.add_entries(entries.order_by('seed', '?'))
+
+    additions = []
+    for y, equal_fencers in groupby(entries.order_by('seed'), lambda x: x.seed):
+        additions.append(list(equal_fencers))
+    add_stage.add_entries(additions)
     stage.state = Stage.READY
     stage.save()
     return api_success()

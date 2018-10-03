@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import JSONField
+from random import sample, seed
 from django.db import models
 from .pool_stage import PoolStage
 from .add_stage import AddStage
@@ -40,12 +40,28 @@ class Stage(models.Model):
         elif self.type == self.DE:
             return DeStage.objects.get(stage=self).ordered_competitors()
 
-    def input(self):
+    def ranked_competitors(self):
+        if self.type == self.POOL:
+            return PoolStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.CULL:
+            return CullStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.ADD:
+            return AddStage.objects.get(stage=self).ranked_competitors()
+        elif self.type == self.DE:
+            return DeStage.objects.get(stage=self).ranked_competitors()
+
+    def input(self, ranked=False):
         """returns a list of entries representing the input of this stage"""
         if not Stage.objects.filter(number__lt=self.number).exists():
             return []
         else:
-            return Stage.objects.get(competition_id=self.competition_id, number=self.number-1).ordered_competitors()
+            ranking = Stage.objects.get(competition_id=self.competition_id,
+                                        number=self.number - 1).ranked_competitors()
+            if ranked:
+                return ranking
+            else:
+                seed(self.competition.id << 30 + self.id)  # Set random number generator seed for consistent results
+                return [entry for group in ranking for entry in sample(group, len(group))]
 
     def deletable(self):
         """returns whether a stage can be deleted or not"""

@@ -1,4 +1,6 @@
 import math
+from random import sample
+
 from django.db import models
 from main.models.de_table import UnfinishedTableException
 
@@ -9,8 +11,11 @@ class DeStage(models.Model):
     fight_down_to = models.IntegerField(default=1)
 
     def ordered_competitors(self):
+        return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
+
+    def ranked_competitors(self):
         try:
-            return list(map(lambda x: x.entry, self.detable_set.get(parent__isnull=True).ordered_competitors()))
+            return self.detable_set.get(parent__isnull=True).ranked_competitors()
         except UnfinishedTableException as e:
             from main.models.stage import Stage
             raise Stage.NotCompleteError(e)
@@ -19,7 +24,8 @@ class DeStage(models.Model):
         """sets up a DE by creating the first table and seeding it with entries and null entries for byes"""
         if self.detable_set.exists():
             raise AssertionError("cant start already running DE")
-        entries = self.stage.input()
+        ranked_entries = self.stage.input(ranked=True)
+        entries = [entry for group in ranked_entries for entry in sample(group, len(group))]
         entries_length = len(entries)
         table = self.detable_set.create(parent=None)
         rounds = math.ceil(math.log2(entries_length))
@@ -39,8 +45,9 @@ class DeStage(models.Model):
             against.save()
 
         # creating seeds
-        for index, entry in enumerate(entries):
-            self.deseed_set.create(entry=entry, seed=index + 1)
+        for index, equal_entries in enumerate(ranked_entries):
+            for entry in equal_entries:
+                self.deseed_set.create(entry=entry, seed=index + 1)
 
 
 def table_layout(rounds):

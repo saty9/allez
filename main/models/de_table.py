@@ -1,6 +1,11 @@
+from itertools import groupby
+from random import sample
+
 from django.db import models
+from django.db.models import OuterRef, Subquery
 from django.utils.translation import gettext as _
 from django.contrib.humanize.templatetags.humanize import ordinal
+from .entry import Entry
 
 
 class DeTable(models.Model):
@@ -29,20 +34,36 @@ class DeTable(models.Model):
                                                                           'table_size': table_size}
 
     def ordered_competitors(self):
+        """
+        :return: ordered entries
+        :rtype: list[Entry]
+        """
+        return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
+
+    def ranked_competitors(self):
+        """
+        :return: ranked entries
+        :rtype: list[list[Entry]]
+        """
         if self.automated():
-            # TODO confirm that this is safe if there are multiple DE's (and therefore seeds) in a single competition
-            return list(self.detableentry_set.filter(entry__isnull=False).order_by('entry__deseed__seed').all())
+            seed_subquery = self.de.deseed_set.filter(entry=OuterRef('entry')).values('seed')
+            entires_ordered_by_seed = self.detableentry_set.filter(entry__isnull=False)\
+                .annotate(seed=Subquery(seed_subquery)).order_by('seed', 'entry').values('entry', 'seed')
+            out = []
+            for _, equal_fencers in groupby(entires_ordered_by_seed, lambda entry: entry['seed']):
+                out.append(list(map(lambda fencer: Entry.objects.get(pk=fencer['entry']), equal_fencers)))
+            return out
         elif self.detableentry_set.count() == 2:
             x = self.detableentry_set.first()
             if x.victory or x.against().victory:
-                return list(self.detableentry_set.filter(entry__isnull=False).order_by('-victory').all())
+                return list(map(lambda entry: [entry.entry], self.detableentry_set.filter(entry__isnull=False).order_by('-victory').all()))
             else:
                 raise UnfinishedTableException('not all fights complete')
         else:
             if not self.children.exists():
                 raise UnfinishedTableException('cannot order competitors without child tables')
-            winners = self.children.get(winners=True).ordered_competitors()
-            losers = self.children.get(winners=False).ordered_competitors()
+            winners = self.children.get(winners=True).ranked_competitors()
+            losers = self.children.get(winners=False).ranked_competitors()
             winners.extend(losers)
             return winners
 

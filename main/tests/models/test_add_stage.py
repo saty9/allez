@@ -31,6 +31,24 @@ class TestAddStage(TestCase):
             self.assertEqual(len(ordered_competitors), len(entry_set))
             self.assertEqual(ordered_competitors, list(entry_set))
 
+    def test_ranked_competitors_base(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.STARTED, number=0)
+        add_stage = stage.addstage_set.first()
+        entry_set = list(self.competition.entry_set.order_by('pk').all())
+        for index, e in enumerate(entry_set):
+            add_stage.addcompetitor_set.create(entry=e, sequence=index)
+        first = entry_set[0].addcompetitor_set.first()
+        first.sequence = entry_set[-1].addcompetitor_set.first().sequence
+        first.save()
+        stage.state = stage.FINISHED
+        stage.save()
+        expected = []
+        for e in entry_set[1:-1]:
+            expected.append(set([e]))
+        expected.append(set([entry_set[0], entry_set[-1]]))
+        actual = list(map(set, add_stage.ranked_competitors()))
+        self.assertListEqual(expected, actual)
+
     def test_where_TOP(self):
         stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.STARTED, number=0)
         add_stage = stage.addstage_set.first()
@@ -99,7 +117,7 @@ class TestAddStage(TestCase):
         stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=0)
         add_stage = stage.addstage_set.first()
         expected = list(self.competition.entry_set.all())
-        add_stage.add_entries(expected)
+        add_stage.add_entries(map(lambda x: [x], expected))
         self.assertListEqual(expected, stage.ordered_competitors())
 
     def test_add_entries_entry_already_added_elsewhere(self):
@@ -107,12 +125,12 @@ class TestAddStage(TestCase):
         add_stage = stage.addstage_set.first()
         expected = list(self.competition.entry_set.all())
         e = expected[-1]
-        add_stage.add_entries([e])
+        add_stage.add_entries([[e]])
         self.assertListEqual([e], stage.ordered_competitors())
 
         stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=1)
         add_stage = stage.addstage_set.first()
-        add_stage.add_entries(expected)
+        add_stage.add_entries(map(lambda x: [x], expected))
         self.assertListEqual(expected, stage.ordered_competitors())
         self.assertListEqual(expected[:-1], list(map(lambda x: x.entry, add_stage.addcompetitor_set.all())))
 
@@ -122,8 +140,15 @@ class TestAddStage(TestCase):
         expected = list(self.competition.entry_set.all())
         e = expected[0]
         expected = expected[1:]
-        add_stage.add_entries(expected)
+        add_stage.add_entries(map(lambda x: [x], expected))
         self.assertListEqual(expected, stage.ordered_competitors())
-        add_stage.add_entries([e])
+        add_stage.add_entries([[e]])
         expected.append(e)
         self.assertListEqual(expected, stage.ordered_competitors())
+
+    def test_add_entries_same_ranking(self):
+        stage = self.competition.stage_set.create(type=Stage.ADD, state=Stage.FINISHED, number=0)
+        add_stage = stage.addstage_set.first()
+        expected = list(self.competition.entry_set.all())
+        add_stage.add_entries([expected])
+        self.assertListEqual([expected], stage.ranked_competitors())

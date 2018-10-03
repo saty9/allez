@@ -27,11 +27,11 @@ class TestAddStageManagementUI(UITestCase):
     def test_add_stage_management_ready_with_entries(self):
         self.stage.state = Stage.READY
         self.stage.save()
-        self.stage.addstage_set.first().add_entries(list(self.comp.entry_set.all()))
+        self.stage.addstage_set.first().add_entries(map(lambda x: [x], self.comp.entry_set.all()))
         self.three_perm_check(self.target, self.manager, 302, 403, 200)
 
     def test_add_stage_management_finished(self):
         self.stage.state = Stage.FINISHED
         self.stage.save()
-        self.stage.addstage_set.first().add_entries(list(self.comp.entry_set.all()))
+        self.stage.addstage_set.first().add_entries(map(lambda x: [x], self.comp.entry_set.all()))
         self.three_perm_check(self.target, self.manager, 302, 403, 200)

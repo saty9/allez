@@ -1,10 +1,10 @@
-from ..factories.competition_factory import PreAddedCompetitionOfSize
+from ..factories.competition_factory import PreAddedCompetitionOfSize, CompetitionOfSize
 from django.test import TestCase
 from main.models import Stage, PoolStage, Competition, Pool
 
 
 def make_boring_results(pool):
-    entries = pool.poolentry_set.all()
+    entries = pool.poolentry_set.order_by('pk').all()
     for avoid_index, fencer_a in enumerate(entries):
         for fencer_b in entries[avoid_index + 1:]:
             fencer_a.fencerA_bout_set.create(fencerB=fencer_b, scoreA=5, victoryA=True)
@@ -67,17 +67,13 @@ class TestPoolStage(TestCase):
         f1 = PoolStage.Fencer(1, 1, 10, 5, 0)
         f2 = PoolStage.Fencer(1, 1, 5, 0, 1)
         self.assertTrue(f1 > f2, "Fallback to ts")
-        # random 3rd fallback
-        f1 = PoolStage.Fencer(1, 1, 5, 0, 0)
-        f2 = PoolStage.Fencer(1, 1, 5, 0, 1)
-        got_lt = False
-        got_gte = False
-        for x in range(20):
-            if f1 > f2:
-                got_gte = True
-            else:
-                got_lt = True
-        self.assertTrue(got_lt and got_gte, "random fallback")
+        # Entry pk 3rd fallback
+        comp = CompetitionOfSize(entries__num_of_entries=2)
+        e1 = comp.entry_set.order_by('pk').first()
+        e2 = comp.entry_set.order_by('pk').last()
+        f1 = PoolStage.Fencer(1, 1, 5, 0, e1)
+        f2 = PoolStage.Fencer(1, 1, 5, 0, e2)
+        self.assertTrue(f1 > f2, "pk fallback")
 
     def test_function_results(self):
         competition = PreAddedCompetitionOfSize(entries__num_of_entries=3)  # type: Competition
@@ -109,3 +105,59 @@ class TestPoolStage(TestCase):
         results = pool_stage.results()
         self.assertEqual(4, results[0].V)
         self.assertEqual(20, results[0].ind())
+
+    def test_function_ordered_competitors_base(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=5)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(1)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool)
+        stage.state = Stage.FINISHED
+        stage.save()
+        self.assertListEqual(pool_stage.ordered_competitors(), list(competition.entry_set.order_by('pk').all()))
+
+    def test_function_ordered_competitors_with_draw(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=10)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(2)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool_stage.pool_set.all()[0])
+        make_boring_results(pool_stage.pool_set.all()[1])
+        stage.state = Stage.FINISHED
+        stage.save()
+        first_ordering = pool_stage.ordered_competitors()
+        x = 0
+        while True:
+            if pool_stage.ordered_competitors() != first_ordering:
+                break
+            elif x == 10:
+                self.fail('ordering should change if there is a draw')
+            x += 1
+        rough_expected_ordering = competition.entry_set.order_by('pk').all()
+        for x in range(5):
+            # checking that overall ordering is still correct
+            expected = set(rough_expected_ordering[x*2:x*2+2])
+            actual = set(first_ordering[x*2:x*2+2])
+            self.assertSetEqual(expected, actual)
+
+    def test_function_ranked_competitors(self):
+        competition = PreAddedCompetitionOfSize(entries__num_of_entries=10)  # type: Competition
+        stage = competition.stage_set.create(type=Stage.POOL, number=1)
+        pool_stage = stage.poolstage_set.first()  # type: PoolStage
+        pool_stage.start(2)
+        pool = pool_stage.pool_set.first()
+        make_boring_results(pool_stage.pool_set.all()[0])
+        make_boring_results(pool_stage.pool_set.all()[1])
+        stage.state = Stage.FINISHED
+        stage.save()
+        first_ordering = pool_stage.ranked_competitors()
+        x = 0
+        while x < 4:
+            self.assertListEqual(first_ordering,
+                                 pool_stage.ranked_competitors(),
+                                 "rankings should not change on repeated runs")
+            x += 1
+        flattened_list = [e for group in first_ordering for e in group]
+        self.assertListEqual(flattened_list, list(competition.entry_set.order_by('pk').all()))
