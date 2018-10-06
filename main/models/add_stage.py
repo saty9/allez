@@ -14,7 +14,6 @@ class AddStage(models.Model):
                (BOTTOM, "Bottom of Rankings"))
     stage = models.ForeignKey('main.Stage', on_delete=models.CASCADE)
     where = models.CharField(max_length=3, choices=choices, default=TOP)
-    run = models.BooleanField(default=False)
 
     def ordered_competitors(self):
         return [entry for group in self.ranked_competitors() for entry in sample(group, len(group))]
