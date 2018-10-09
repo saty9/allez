@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.utils.translation import gettext as _
 from rules.contrib.views import permission_required, objectgetter
 from main.models import Stage
 from .stages import manage_pool_stage, manage_cull_stage, manage_de_stage, manage_add_stage
@@ -26,4 +27,20 @@ def manage_stage_router(request, org_slug, comp_id, stage_id):
         return manage_add_stage(request, add_id)
     else:
         return HttpResponse("Not Implemented yet")
+
+
+def stage_ranking(request, org_slug, comp_id, stage_id):
+    stage = get_object_or_404(Stage, pk=stage_id, competition=comp_id)
+    try:
+        stage_rankings = stage.ranked_competitors()
+    except Stage.NotCompleteError:
+        return HttpResponse(_("Stage Not Finished"))
+    rankings = []
+    place = 1
+    for rank in stage_rankings:
+        for entry in rank:
+            rankings.append((place, entry))
+        place += len(rank)
+    return render(request, 'ui/competition/ranking.html', context={'stage': stage,
+                                                                   'rankings': rankings})
 
