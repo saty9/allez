@@ -41,3 +41,6 @@ class Competition(models.Model):
         entry.seed = seed
         entry.save()
         return entry
+
+    def __str__(self):
+        return self.name

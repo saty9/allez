@@ -1,0 +1,29 @@
+{%  extends 'ui/base.html' %}
+{% load i18n %}
+{% load rules %}
+
+
+
+{% block title %}{{ stage.competition }} Stage {{ stage.number }} {% trans 'ranking' %}{% endblock %}
+
+{% block body %}
+    <h2>
+        {% blocktrans with s_num=stage.number %}
+            Ranking after stage {{ s_num }}
+        {% endblocktrans %}
+    </h2>
+    <table class="table">
+    <tr>
+        <th>{% trans 'Place' %}</th>
+        <th>{% trans 'Entry' %}</th>
+    </tr>
+    {% for ranking in rankings %}
+        <tr>
+            <td>{{ ranking.0 }}</td>
+            <td>
+                {{ ranking.1 }}
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

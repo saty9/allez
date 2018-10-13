@@ -87,6 +87,10 @@ class Stage(models.Model):
             elif self.type == Stage.CULL:
                 self.cullstage_set.create()
 
+    def complete(self):
+        """returns whether a stage is complete"""
+        return self.state in [self.FINISHED, self.LOCKED]
+
     class Meta:
         unique_together = ('number', 'competition')
         get_latest_by = 'number'
