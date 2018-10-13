@@ -1,12 +1,10 @@
 from main.tests.factories.competition_factory import PreAddedCompetitionOfSize
 from main.tests.factories.org_member_factory import ManagerFactory
-from main.tests.factories.organisation_factory import OrganisationFactory
-from main.tests.factories.entry_factory import EntryFactory
 from ui.tests.ui_test_case import UITestCase
 from django.urls import reverse
 
 
-class TestCheckInUI(UITestCase):
+class TestStageRankingUI(UITestCase):
 
     def setUp(self):
         self.competition = PreAddedCompetitionOfSize(entries__num_of_entries=10)
