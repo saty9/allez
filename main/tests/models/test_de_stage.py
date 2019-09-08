@@ -14,12 +14,15 @@ def make_boring_de_results(de_stage):
 
 
 def make_boring_de_table_results(table):
-    entries = list(table.detableentry_set.order_by('entry__deseed__seed').all())
+    entries = list(table.detableentry_set.order_by('entry__deseed__seed').exclude(entry=None).all())
     for e in entries:
         against = e.against()
         e.score = 15
         e.victory = True
-        entries.remove(against)
+        try:
+            entries.remove(against)
+        except ValueError:
+            pass
         e.save()
 
 
