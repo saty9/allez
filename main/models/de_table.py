@@ -106,7 +106,9 @@ class DeTable(models.Model):
                 losers.detableentry_set.create(entry=e.entry, table_pos=e.table_pos // 2)
 
         # byes automatically lose their fights
-        for bye in losers.detableentry_set.filter(entry__isnull=True).all():
+        byes = list(losers.detableentry_set.filter(entry__isnull=True).all())
+        byes.extend(winners.detableentry_set.filter(entry__isnull=True).all())
+        for bye in byes:
             if not bye.victory:
                 # protecting against case where 2 byes end up against each other when fighting for all positions
                 against = bye.against()
