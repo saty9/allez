@@ -1,3 +1,5 @@
+from django.db.models import F
+
 from ..factories.competition_factory import PreAddedCompetitionOfSize
 from django.test import TestCase
 from main.models import Stage, DeStage, Competition
@@ -53,10 +55,10 @@ class TestDeTable(TestCase):
                                       order_by('entry__deseed__seed').all())))
         loser_table = self.head_table.children.filter(winners=False).first()
         expected_loser_table_entries = [self.stage.input()[-1]] + [None for _ in range(7)]
-        self.assertListEqual(expected_loser_table_entries,
-                             list(map(lambda x: x.entry, loser_table.
-                                      detableentry_set.
-                                      order_by('entry__deseed__seed').all())))
+        actual_loser_table_entries = list(map(lambda x: x.entry, loser_table.
+                                          detableentry_set.
+                                          order_by(F('entry__deseed__seed').asc(nulls_last=True)).all()))
+        self.assertListEqual(expected_loser_table_entries, actual_loser_table_entries)
         assert self.head_table.complete
 
     def test_function_make_children_incomplete_fights(self):
