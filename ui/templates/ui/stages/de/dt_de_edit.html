@@ -1,0 +1,238 @@
+{% extends 'ui/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Manage' %} {% trans 'DE' %}{% endblock %}
+
+{% block styles %}
+    {% comment %}
+    <style>
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes error-blink {
+            from {
+                background-color: rgba(255, 89, 81, 255)
+            }
+            to {
+                background-color: rgba(255, 89, 81, 0)
+            }
+        }
+
+        .blink-error {
+
+            animation-name: error-blink;
+            animation-timing-function: ease;
+            animation-duration: 1s;
+        }
+
+        .form-control {
+            min-width: 45px;
+        }
+
+        table {
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (min-width: 450px) {
+            .winner {
+                background: url({% static 'ui/images/V.svg' %}) no-repeat scroll 7px 9px;
+                padding-left: 30px;
+            }
+
+            .loser {
+                background: url({% static 'ui/images/D.svg' %}) no-repeat scroll 7px 9px;
+                padding-left: 30px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .winner {
+                color: green;
+            }
+
+            .loser {
+                color: red;
+            }
+        }
+
+        .relative {
+            position: relative;
+        }
+    </style>
+    {% endcomment %}
+    <style>
+        .tournament {
+            overflow: auto;
+        }
+
+        .tournament .bracket {
+            min-width: 100px;
+            vertical-align: top;
+            float: left;
+            margin-right: 10px;
+        }
+
+        {% comment %}.tournament .bracket .match {
+            border: 1px solid;
+        }
+
+        .tournament .bracket .match .p1 {
+            height: 20px;
+        }
+
+        .tournament .bracket .match .p2 {
+            height: 20px;
+        }{% endcomment %}
+
+        .tournament .bracket .match .spacer {
+            background-color: #DFDFDF;
+            height: 38px;
+        }
+
+        .tournament .bracket .spacer {
+            height: 80px;
+        }
+
+        .tournament .bracket .small-spacer {
+            height: 10px;
+        }
+
+        .tournament .bracket .winner {
+            border-bottom: 1px solid;
+        }
+
+        .left-line {
+            border-left: 1px solid;
+        }
+
+        .tournament .cell {
+            min-width: 100px;
+            height: 20px;
+            float: left;
+            background-color: #DFDFDF;
+        }
+
+        .tournament .l2 {
+            background-color: #D0D0D0;
+        }
+
+        .tournament .lmax {
+            width: 0px;
+            clear: both;
+        }
+
+        @media (max-width: 1000px){
+        .sub_bracket {
+            visibility: hidden;
+        }
+    }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <dialog id="get_winner_dialog">
+        <form method="dialog">
+            <section>
+                <p>{% trans 'Who Won?' noop %}</p>
+            </section>
+            <menu>
+                <button id="d_opt_1"></button>
+                <button id="d_opt_2"></button>
+            </menu>
+        </form>
+    </dialog>
+    <br>
+    <div class="tournament">
+        <div class="bracket sub_bracket" id="loser-bracket">
+            {% for bout in losers %}
+                <div class="spacer"></div>
+                <div class="match list-group">
+                    <div class="p1 list-group-item">
+                        {% with bout.0 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                    <div class="p2 list-group-item">
+                        {% with bout.1 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="bracket" id="main-bracket">
+            {% for bout in bouts %}
+                <div class="match list-group">
+                    <div class="p1 list-group-item">
+                        {% with bout.0 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                    <div class="p2 list-group-item">
+                        {% with bout.1 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                </div>
+                <div class="small-spacer"></div>
+            {% endfor %}
+        </div>
+        <div class="bracket sub_bracket" id="winner-bracket">
+            {% for bout in winners %}
+                <div class="spacer"></div>
+                <div class="match list-group">
+                    <div class="p1 list-group-item">
+                        {% with bout.0 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                    <div class="p2 list-group-item">
+                        {% with bout.1 as e %}
+                            {% include 'ui/stages/de/display_de_entry.html' %}
+                        {% endwith %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'dialog-polyfill/dialog-polyfill.js' %}"></script>
+    <script>
+        //Based loosely on http://whileonefork.blogspot.com/2010/10/jquery-json-to-draw-elimination-single.html?m=1
+
+        $(document).ready(function ($) {
+            let main_matches = $("#main-bracket > .match");
+            let winner_spacers = $("#winner-bracket > .spacer");
+            let loser_spacers = $("#loser-bracket > .spacer");
+
+            for (var roundIndex = 0; roundIndex < winner_spacers.length; roundIndex++) {
+                var vOffset = winner_spacers[roundIndex];
+                //row 2+; line up with previous row
+                var alignTo = main_matches[roundIndex * 2];
+                //offset to line up tops
+                var desiredOffset = alignTo.offsetTop - vOffset.offsetTop;
+
+                //offset by half the previous match-height
+                desiredOffset += alignTo.clientHeight + (alignTo.nextElementSibling.clientHeight / 2) - vOffset.nextElementSibling.clientHeight / 2;
+                $(vOffset).height(desiredOffset);
+                $(loser_spacers[roundIndex]).height(desiredOffset);
+            }
+        });
+
+        $(':input[type=number]').on('mousewheel', function (e) {
+            e.preventDefault();
+        });
+    </script>
+{% endblock %}

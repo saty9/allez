@@ -1,0 +1,21 @@
+<div class="card" style="max-width: 25rem; min-width: 25rem;">
+    <div class="card-header">Header</div>
+    <div class="card-body">
+        <div>
+            {% if bout.0.entry %}
+                <div>{{ bout.0.seed }} - {{ bout.0 }}</div>
+            {% else %}
+                <div>BYE</div>
+            {% endif %}
+        <input type="number" class="form-control">
+        </div>
+        <div>
+            {% if bout.1.entry %}
+                {{ bout.1.seed }} - {{ bout.1 }}
+            {% else %}
+                BYE
+            {% endif %}
+        <input type="number">
+        </div>
+    </div>
+</div>
