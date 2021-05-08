@@ -1,8 +1,6 @@
-from functools import wraps
+from functools import wraps, WRAPPER_ASSIGNMENTS
 
 from django.http import JsonResponse
-from django.utils import six
-from django.utils.decorators import available_attrs
 
 
 def permission_required_json(perm, fn=None, login_url=None, raise_exception=False):
@@ -26,10 +24,10 @@ def permission_required_json(perm, fn=None, login_url=None, raise_exception=Fals
         """
 
         def decorator(view_func):
-            @wraps(view_func, assigned=available_attrs(view_func))
+            @wraps(view_func, assigned=WRAPPER_ASSIGNMENTS)
             def _wrapped_view(request, *args, **kwargs):
                 # Normalize to a list of permissions
-                if isinstance(perm, six.string_types):
+                if isinstance(perm, str):
                     perms = (perm,)
                 else:
                     perms = perm
