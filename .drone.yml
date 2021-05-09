@@ -14,9 +14,38 @@ steps:
     image: python:3.8
     environment:
       REDIS_HOST: "redis"
+      DEBUG: "True"
     commands:
       - pip install -r requirements.txt
       - pip install -r requirements-dev.txt
       - python manage.py test
     depends_on:
     - lock-requirements
+
+  - name: create_image
+    image: banzaicloud/drone-kaniko
+    settings:
+      username: user
+      password: password
+      registry: "registry.container-registry:5000"
+      repo: "allez"
+      skip_tls_verify: true
+      tags: ${DRONE_COMMIT_SHA}
+      context: "/drone/src"
+      dockerfile: "/drone/src/Dockerfile --insecure"
+    depends_on:
+      - lock-requirements
+
+  - name: create_static_image
+    image: banzaicloud/drone-kaniko
+    settings:
+      username: user
+      password: password
+      registry: "registry.container-registry:5000"
+      repo: "allez-static"
+      skip_tls_verify: true
+      tags: ${DRONE_COMMIT_SHA}
+      context: "/drone/src"
+      dockerfile: "/drone/src/DockerfileStatic --insecure"
+    depends_on:
+      - lock-requirements

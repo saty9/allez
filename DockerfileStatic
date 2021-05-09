@@ -1,0 +1,18 @@
+FROM node
+WORKDIR /srv/api
+ADD package.json .
+ADD yarn.lock .
+RUN yarn install --frozen-lockfile
+
+FROM python:3.6
+WORKDIR /srv/api
+ADD requirements.txt .
+RUN pip install -r requirements.txt
+ADD . /srv/api
+COPY --from=0 /srv/api/node_modules /srv/api/node_modules/.
+RUN python manage.py collectstatic
+
+FROM nginx:1.19
+WORKDIR /usr/share/nginx/html
+COPY --from=1 /srv/static .
+RUN chown -R nginx:www-data /usr/share/nginx/html
