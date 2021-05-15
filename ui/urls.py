@@ -15,9 +15,11 @@ Including another URLconf
 """
 from django.urls import path
 from . import views
+from .views import CreateOrganisation
 
 urlpatterns = [
     path('', views.front_page, name='ui/front_page'),
+    path('organisation/create', CreateOrganisation.as_view(), name='ui/organisation/create'),
     path('organisation/list', views.organisation_list, name='ui/organisation/list'),
     path('change_org/', views.change_org, name='ui/change_org'),
     path('dt/pool/<int:pool_id>', views.dt_manage_pool, name='ui/dt_manage_pool'),
