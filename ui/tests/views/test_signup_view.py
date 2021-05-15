@@ -15,3 +15,4 @@ class TestSignup(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
         user = User.objects.filter(username="testusername").first()
         self.assertTrue(check_password("GreatWord", user.password))
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
