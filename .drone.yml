@@ -2,6 +2,12 @@ kind: pipeline
 type: kubernetes
 name: build and test
 
+trigger:
+  repo:
+    - saty9/allez
+  events:
+    - push
+
 steps:
   - name: lock-requirements
     image: python:3.8
@@ -21,6 +27,9 @@ steps:
       - python manage.py test
     depends_on:
     - lock-requirements
+    when:
+      event:
+        - push
 
   - name: create_image
     image: banzaicloud/drone-kaniko
