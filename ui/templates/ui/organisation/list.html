@@ -16,6 +16,9 @@
                 <td><a href="{% url 'ui/organisation/show' org.slug %}">{{ org.name }}</a></td>
             </tr>
         {% endfor %}
+        <tr>
+            <td><a href="{% url 'ui/organisation/create' %}" class="btn btn-success">Create Organisation</a></td>
+        </tr>
     </table>
 
     <h2>{% trans "Organisations" %}</h2>

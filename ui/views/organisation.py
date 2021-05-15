@@ -1,5 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views.generic import CreateView
+
 from main.models import Organisation, OrganisationMembership
 
 
@@ -13,6 +17,24 @@ def organisation(request, org_slug):
                                                                  'full_members': full_members,
                                                                  'applicants': applicants,
                                                                  'can_manage': can_manage})
+
+
+class CreateOrganisation(LoginRequiredMixin, CreateView):
+    model = Organisation
+    template_name = "ui/organisation/create.html"
+    fields = ["name", "email", "slug"]
+
+    def get_success_url(self):
+        org = self.object
+        self.request.session['org_id'] = org.id
+        slug = org.slug
+        return reverse('ui/org/competitions', kwargs={'org_slug': slug})
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        org = self.object
+        org.organisationmembership_set.create(state=OrganisationMembership.MANAGER, user=self.request.user)
+        return response
 
 
 def organisation_list(request):
