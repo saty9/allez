@@ -16,6 +16,8 @@
             <p>Log in to get started</p>
             <a class="btn btn-primary btn-lg" href="{% url 'login' %}?next={% url 'ui/organisation/list' %}"
                role="button">Login</a>
+            <a class="btn btn-secondary btn-lg" href="{% url 'signup' %}"
+               role="button">Register</a>
         </div>
     </div>
 {% endblock body %}
