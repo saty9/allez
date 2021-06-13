@@ -15,6 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from graphene_django.views import GraphQLView
+
+from .settings import DEBUG
 from ui.views import LoginUser, RegisterUser
 
 urlpatterns = [
@@ -23,5 +26,6 @@ urlpatterns = [
     path('accounts/signup/', RegisterUser.as_view(), name='signup'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
+    path("graphql", GraphQLView.as_view(graphiql=DEBUG)),
     path('', include('ui.urls')),
 ]

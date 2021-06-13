@@ -12,6 +12,7 @@ reportlab = "*"
 rules = "*"
 Django = ">=2"
 uWSGI = ">=2.0.16"
+graphene-django = "*"
 
 [requires]
 python_version = "3.8"

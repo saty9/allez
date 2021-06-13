@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY",'ebnj)mp6#qr2)5fovr%@v5a_i%jvbarlce)(a%cnen+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = [os.getenv("PRIMARY_DOMAIN","allez.kylecooke.me.uk")]
+ALLOWED_HOSTS = [os.getenv("PRIMARY_DOMAIN","allez.kylecooke.me.uk"), "127.0.0.1"]
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'graphene_django',
     'main.apps.MainConfig',
     'ui.apps.UiConfig',
     'rules.apps.AutodiscoverRulesConfig',
@@ -147,3 +148,7 @@ STATIC_ROOT = '/srv/static'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'node_modules/'),
 ]
+
+GRAPHENE = {
+    "SCHEMA": "main.schema.schema"
+}

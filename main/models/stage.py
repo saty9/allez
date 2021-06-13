@@ -91,6 +91,16 @@ class Stage(models.Model):
         """returns whether a stage is complete"""
         return self.state in [self.FINISHED, self.LOCKED]
 
+    def get_concrete_type(self):
+        if self.type == Stage.POOL:
+            return self.poolstage_set.first()
+        elif self.type == Stage.CULL:
+            return self.cullstage_set.first()
+        elif self.type == Stage.DE:
+            return self.destage_set.first()
+        elif self.type == Stage.ADD:
+            return self.addstage_set.first()
+
     class Meta:
         unique_together = ('number', 'competition')
         get_latest_by = 'number'
